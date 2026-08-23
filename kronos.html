@@ -7,6 +7,13 @@
 <title>KRONOS X</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Spectrum ekranı için: EPUB, PDF, resim ve markdown kütüphaneleri -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* ===================================================================
@@ -735,6 +742,851 @@
     nav button{font-size:8px;letter-spacing:.04em;}
     nav button .ik{font-size:15px;}
   }
+
+  /* ===================================================================
+     SPECTRUM · Stańczyk Spectrum okuma takibi
+     Uygulamanın tamamı #view-spectrum altına hapsedildi; kendi
+     değişkenleri, yazı tipleri ve bileşenleri KRONOS'unkilere
+     karışmaz. Aşağısı kaynak dosyadan bire bir alınmış, yalnızca
+     seçicileri kapsanmış CSS'tir.
+     =================================================================== */
+
+#view-spectrum {
+      --bg: #05050a;
+      --bg-soft: #0b0b12;
+      --panel: rgba(16, 16, 22, 0.88);
+      --panel-solid: #101016;
+      --line: rgba(255, 255, 255, 0.09);
+      --line-strong: rgba(255, 51, 51, 0.28);
+
+      --neon-red: #ff3333;
+      --neon-red-glow: rgba(255, 51, 51, 0.55);
+      --neon-red-muted: rgba(255, 51, 51, 0.22);
+      --neon-yellow: #ffcc00;
+      --neon-yellow-glow: rgba(255, 204, 0, 0.7);
+      --neon-green: #00ff88;
+      --neon-green-glow: rgba(0, 255, 136, 0.5);
+      --neon-blue: #00f3ff;
+
+      --text: #f2f2f5;
+      --text-soft: #b9b9c4;
+      --text-muted: #7c7c8a;
+
+      --r-sm: 6px;
+      --r-md: 10px;
+      --r-lg: 16px;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.75);
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+      --display: 'Orbitron', sans-serif;
+    }
+#view-spectrum, #view-spectrum * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+#view-spectrum { scroll-behavior: smooth; }
+#view-spectrum {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.5rem 1rem 4rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+#view-spectrum::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        radial-gradient(900px 520px at 12% -10%, rgba(255, 51, 51, 0.14), transparent 60%),
+        radial-gradient(760px 480px at 88% 0%, rgba(0, 243, 255, 0.07), transparent 62%),
+        linear-gradient(180deg, #07070d 0%, #05050a 55%, #050508 100%);
+    }
+#view-spectrum::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 46px 46px;
+    }
+#view-spectrum body.modal-open { overflow: hidden; }
+#view-spectrum ::-webkit-scrollbar { width: 10px; height: 10px; }
+#view-spectrum ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); }
+#view-spectrum ::-webkit-scrollbar-thumb {
+      background: rgba(255, 51, 51, 0.35);
+      border-radius: 20px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+#view-spectrum ::-webkit-scrollbar-thumb:hover { background: rgba(255, 51, 51, 0.6); background-clip: padding-box; }
+#view-spectrum .container { max-width: 1400px; margin: 0 auto; }/* ---------------- HEADER ---------------- */
+#view-spectrum header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      padding-bottom: 1.1rem;
+      margin-bottom: 1.8rem;
+      border-bottom: 1px solid var(--line-strong);
+    }
+#view-spectrum .brand-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+#view-spectrum .live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--neon-red);
+      box-shadow: 0 0 10px var(--neon-red);
+    }
+#view-spectrum h1 {
+      font-family: var(--display);
+      font-size: clamp(1.5rem, 4.5vw, 2.25rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      color: #fff;
+      text-shadow: 0 0 22px rgba(255, 51, 51, 0.35);
+    }
+#view-spectrum h1 span { color: var(--neon-red); }
+#view-spectrum .header-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }/* ---------------- BUTTONS ---------------- */
+#view-spectrum .cyber-btn {
+      font-family: var(--display);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      padding: 0.65rem 1.05rem;
+      border-radius: var(--r-sm);
+      background: rgba(255, 51, 51, 0.07);
+      border: 1px solid rgba(255, 51, 51, 0.45);
+      color: #fff;
+      cursor: pointer;
+      transition: background .18s ease, box-shadow .18s ease, color .18s ease, transform .12s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+#view-spectrum .cyber-btn:hover { background: rgba(255, 51, 51, 0.18); border-color: var(--neon-red); box-shadow: 0 0 18px rgba(255, 51, 51, 0.28); }
+#view-spectrum .cyber-btn:active { transform: translateY(1px); }
+#view-spectrum .cyber-btn.ghost { background: rgba(255, 255, 255, 0.03); border-color: var(--line); color: var(--text-soft); }
+#view-spectrum .cyber-btn.ghost:hover { border-color: rgba(255, 255, 255, 0.3); color: #fff; box-shadow: none; background: rgba(255,255,255,0.07); }
+#view-spectrum .cyber-btn.solid { background: var(--neon-red); color: #0a0000; border-color: var(--neon-red); }
+#view-spectrum .cyber-btn.solid:hover { box-shadow: 0 0 22px rgba(255, 51, 51, 0.55); }
+#view-spectrum .cyber-btn.danger { border-color: rgba(255, 71, 87, 0.5); background: rgba(255, 71, 87, 0.08); color: #ff8b95; }
+#view-spectrum .cyber-btn.danger:hover { background: rgba(255, 71, 87, 0.2); color: #fff; }
+#view-spectrum .cyber-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#view-spectrum .btn-count {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 0.1rem 0.4rem;
+      border-radius: 20px;
+      color: #fff;
+    }
+#view-spectrum :focus-visible { outline: 2px solid var(--neon-blue); outline-offset: 2px; }/* ---------------- HERO ---------------- */
+#view-spectrum .hero {
+      display: grid;
+      grid-template-columns: minmax(240px, 340px) 1fr;
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: 1.4rem;
+      box-shadow: var(--shadow);
+    }
+@media (max-width: 820px) {
+#view-spectrum .hero { grid-template-columns: 1fr; } }
+#view-spectrum .hero-streak {
+      background: linear-gradient(155deg, rgba(255, 51, 51, 0.14), rgba(10, 10, 14, 0.95) 62%);
+      padding: 1.6rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.15rem;
+      position: relative;
+      transition: background .35s ease;
+    }
+#view-spectrum .hero-streak.saved { background: linear-gradient(155deg, rgba(0, 255, 136, 0.14), rgba(8, 12, 10, 0.95) 62%); }
+#view-spectrum .hero-label {
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+#view-spectrum .hero-streak-value {
+      font-family: var(--display);
+      font-weight: 900;
+      font-size: clamp(3rem, 10vw, 4.4rem);
+      line-height: 1;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      text-shadow: 0 0 28px rgba(255, 255, 255, 0.22);
+    }
+#view-spectrum .hero-streak-value small {
+      font-family: var(--display);
+      font-size: 0.95rem;
+      letter-spacing: 0.2em;
+      color: var(--text-soft);
+    }
+#view-spectrum .hero-status {
+      margin-top: 0.85rem;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.7rem;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--text-soft);
+      align-self: flex-start;
+    }
+#view-spectrum .hero-status.on { border-color: rgba(0, 255, 136, 0.45); color: var(--neon-green); }
+#view-spectrum .hero-stats {
+      background: var(--panel-solid);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1px;
+    }
+#view-spectrum .hero-stat {
+      background: rgba(12, 12, 17, 0.9);
+      padding: 1.25rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      transition: background .2s ease;
+    }
+#view-spectrum .hero-stat:hover { background: rgba(255, 51, 51, 0.06); }
+#view-spectrum .hero-stat .v {
+      font-family: var(--display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+    }
+#view-spectrum .hero-stat .k {
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }/* ---------------- HEATMAP ---------------- */
+#view-spectrum .panel {
+      background: var(--panel-solid);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1.4rem;
+    }
+#view-spectrum .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+#view-spectrum .panel-title {
+      font-family: var(--display);
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      color: var(--neon-red);
+      text-transform: uppercase;
+    }
+#view-spectrum .heat-scroll { overflow-x: auto; padding-bottom: 0.4rem; }
+#view-spectrum .heat-inner { display: flex; gap: 6px; min-width: max-content; }
+#view-spectrum .heat-weekdays {
+      display: grid;
+      grid-template-rows: repeat(7, 13px);
+      gap: 4px;
+      padding-top: 18px;
+    }
+#view-spectrum .heat-weekdays span {
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      line-height: 13px;
+      text-align: right;
+      width: 24px;
+    }
+#view-spectrum .heat-months {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 13px;
+      gap: 4px;
+      height: 18px;
+    }
+#view-spectrum .heat-months span {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+#view-spectrum .heatmap-grid {
+      display: grid;
+      grid-template-rows: repeat(7, 13px);
+      grid-auto-flow: column;
+      grid-auto-columns: 13px;
+      gap: 4px;
+    }
+#view-spectrum .heatmap-cell {
+      width: 13px; height: 13px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+#view-spectrum .heatmap-cell.future { background: transparent; border-color: transparent; }
+#view-spectrum .heatmap-cell.level-1 { background: rgba(255, 51, 51, 0.3); border-color: transparent; }
+#view-spectrum .heatmap-cell.level-2 { background: rgba(255, 51, 51, 0.55); border-color: transparent; }
+#view-spectrum .heatmap-cell.level-3 { background: rgba(255, 51, 51, 0.8); border-color: transparent; box-shadow: 0 0 5px rgba(255,51,51,0.5); }
+#view-spectrum .heatmap-cell.level-4 { background: #ff3333; border-color: transparent; box-shadow: 0 0 9px #ff3333; }
+#view-spectrum .heatmap-cell.today { outline: 1px solid #fff; outline-offset: 1px; }
+#view-spectrum .heat-legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+#view-spectrum .heat-legend i { width: 11px; height: 11px; border-radius: 3px; display: block; }/* ---------------- ACTION + FILTER BARS ---------------- */
+#view-spectrum .action-bar {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.9rem;
+    }
+#view-spectrum .filter-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 0.9rem;
+      margin-bottom: 1.6rem;
+      background: rgba(10, 10, 15, 0.75);
+      padding: 1rem 1.2rem;
+      border-radius: var(--r-md);
+      border: 1px solid var(--line);
+    }
+#view-spectrum .filter-group { display: flex; flex-direction: column; gap: 0.35rem; }
+#view-spectrum .filter-group label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+#view-spectrum .filter-bar input, #view-spectrum .filter-bar select { padding: 0.55rem 0.7rem; font-size: 0.85rem; width: 100%; }
+#view-spectrum .active-filter-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(255, 51, 51, 0.14);
+      border: 1px solid var(--neon-red);
+      color: #fff;
+      padding: 0.45rem 0.75rem;
+      border-radius: var(--r-sm);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      align-self: flex-end;
+    }
+#view-spectrum .active-filter-badge button {
+      background: transparent; border: none; color: var(--neon-red);
+      cursor: pointer; font-weight: bold; font-size: 0.85rem; line-height: 1;
+    }
+#view-spectrum .list-meta {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      margin-bottom: 0.9rem;
+      text-transform: uppercase;
+    }/* ---------------- BOOK CARDS ---------------- */
+#view-spectrum .book-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.5rem;
+    }
+#view-spectrum .book-card {
+      background-color: rgba(18, 18, 24, 0.92);
+      padding: 1.3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      min-height: 240px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+#view-spectrum .book-card:hover { transform: translateY(-3px); }
+#view-spectrum .book-card:active { transform: scale(0.985); }
+#view-spectrum .border-normal { border: 1px solid var(--card-border-color, rgba(255,255,255,0.14)); border-radius: var(--r-md); }
+#view-spectrum .border-important {
+      border: 2px solid var(--card-border-color, var(--neon-red));
+      border-radius: 12px;
+      box-shadow: 0 0 16px var(--card-border-glow, rgba(255,51,51,0.35));
+    }
+#view-spectrum .border-critical {
+      border: 2px dashed var(--card-border-color, var(--neon-red));
+      border-radius: 12px;
+      outline: 1px solid var(--card-border-color, var(--neon-red));
+      outline-offset: 4px;
+      box-shadow: 0 0 20px var(--card-border-glow, rgba(255,51,51,0.4));
+      margin: 4px;
+    }
+#view-spectrum .border-legendary {
+      border: 3px double var(--card-border-color, var(--neon-red));
+      border-radius: 20px 3px 20px 3px;
+      outline: 1px solid var(--card-border-color, var(--neon-red));
+      outline-offset: 5px;
+      box-shadow: 0 0 28px var(--card-border-glow, rgba(255,51,51,0.55)), inset 0 0 14px var(--card-border-glow, rgba(255,51,51,0.22));
+      margin: 5px;
+    }
+#view-spectrum .book-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; }
+#view-spectrum .book-title { font-weight: 700; font-size: 1.12rem; line-height: 1.25; color: #fff; }
+#view-spectrum .book-author { font-size: 0.82rem; color: var(--text-soft); margin-top: 0.25rem; }
+#view-spectrum .card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
+#view-spectrum .category-badge {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      padding: 0.22rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(255, 51, 51, 0.12);
+      border: 1px solid rgba(255, 51, 51, 0.55);
+      color: var(--neon-red);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+#view-spectrum .note-badge {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: var(--neon-yellow);
+      background: rgba(255, 204, 0, 0.1);
+      border: 1px solid rgba(255, 204, 0, 0.35);
+      padding: 0.15rem 0.42rem;
+      border-radius: 4px;
+      letter-spacing: 0.1em;
+    }
+#view-spectrum .icon-x {
+      background: transparent; border: none; color: rgba(255,255,255,0.35);
+      cursor: pointer; font-size: 1rem; line-height: 1; padding: 0.15rem 0.25rem; border-radius: 4px;
+    }
+#view-spectrum .icon-x:hover { color: #ff4757; background: rgba(255, 71, 87, 0.12); }
+#view-spectrum .tag-container { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+#view-spectrum .tag-pill {
+      font-size: 0.68rem;
+      padding: 0.16rem 0.48rem;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-soft);
+    }
+#view-spectrum .progress-line {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-soft);
+      display: flex;
+      justify-content: space-between;
+      margin-top: auto;
+      letter-spacing: 0.05em;
+    }
+#view-spectrum .progress-bar-bg { width: 100%; height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+#view-spectrum .progress-bar-fill {
+      height: 100%;
+      background: var(--card-border-color, var(--neon-red));
+      box-shadow: 0 0 8px var(--card-border-color, var(--neon-red));
+      width: 0%;
+      transition: width .45s cubic-bezier(.4,0,.2,1);
+    }
+#view-spectrum .eta-badge {
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      color: var(--neon-yellow);
+      background: rgba(255, 204, 0, 0.07);
+      border: 1px solid rgba(255, 204, 0, 0.22);
+      padding: 0.32rem 0.55rem;
+      border-radius: var(--r-sm);
+      letter-spacing: 0.04em;
+    }
+#view-spectrum .book-actions { display: flex; gap: 0.45rem; align-items: center; margin-top: 0.35rem; flex-wrap: wrap; }
+#view-spectrum .action-btn {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      padding: 6px 11px;
+      border-radius: 5px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: var(--text-soft);
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+#view-spectrum .action-btn:hover { border-color: #fff; color: #fff; }
+#view-spectrum .read-btn {
+      border-color: var(--card-border-color, var(--neon-red));
+      color: var(--card-border-color, var(--neon-red));
+      font-weight: 700;
+    }
+#view-spectrum .read-btn:hover {
+      background: var(--card-border-color, var(--neon-red));
+      color: #000;
+      box-shadow: 0 0 12px var(--card-border-color, var(--neon-red));
+    }
+#view-spectrum .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3.5rem 1rem;
+      border: 1px dashed var(--line);
+      border-radius: var(--r-lg);
+      color: var(--text-muted);
+    }
+#view-spectrum .empty-state strong { display: block; font-family: var(--display); color: var(--text-soft); font-size: 0.95rem; margin-bottom: 0.5rem; letter-spacing: 0.08em; }/* ---------------- İSTEDİKLERİM (WISHLIST) ---------------- */
+#view-spectrum .wish-toolbar {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr auto;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+@media (max-width: 620px) {
+#view-spectrum .wish-toolbar { grid-template-columns: 1fr; } }
+#view-spectrum .wish-list { display: flex; flex-direction: column; }
+#view-spectrum .wish-row {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.85rem 0.9rem;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      background: transparent;
+      transition: background .15s ease, padding-left .15s ease;
+      text-align: left;
+      width: 100%;
+      border-left: 2px solid transparent;
+    }
+#view-spectrum .wish-row:first-child { border-top: 1px solid var(--line); }
+#view-spectrum .wish-row:hover { background: rgba(255, 51, 51, 0.07); border-left-color: var(--neon-red); padding-left: 1.1rem; }
+#view-spectrum .wish-num {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      min-width: 26px;
+    }
+#view-spectrum .wish-body { flex: 1; min-width: 0; display: block; }
+#view-spectrum .wish-title {
+      display: block;
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+#view-spectrum .wish-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.18rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+#view-spectrum .prio {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+#view-spectrum .prio.high { color: var(--neon-red); border: 1px solid rgba(255,51,51,0.5); background: rgba(255,51,51,0.1); }
+#view-spectrum .prio.mid { color: var(--neon-yellow); border: 1px solid rgba(255,204,0,0.4); background: rgba(255,204,0,0.08); }
+#view-spectrum .prio.low { color: var(--text-muted); border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.04); }
+#view-spectrum .wish-arrow { color: var(--text-muted); font-family: var(--mono); font-size: 0.95rem; }
+#view-spectrum .wish-row:hover .wish-arrow { color: var(--neon-red); }
+#view-spectrum .wish-detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.9rem; }
+@media (max-width: 620px) {
+#view-spectrum .wish-detail-grid { grid-template-columns: 1fr; } }
+#view-spectrum .segmented { display: flex; gap: 0.4rem; }
+#view-spectrum .segmented button {
+      flex: 1;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      padding: 0.5rem;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+#view-spectrum .segmented button.active { border-color: var(--neon-red); color: #fff; background: rgba(255,51,51,0.14); }/* ---------------- NOTES ---------------- */
+#view-spectrum .book-note-display {
+      background: rgba(5, 5, 8, 0.92);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--neon-red);
+      padding: 1.1rem 1.2rem;
+      border-radius: 0 var(--r-md) var(--r-md) 0;
+    }
+#view-spectrum .note-header-text {
+      font-family: var(--display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--neon-red);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.8rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px solid rgba(255, 51, 51, 0.2);
+    }
+#view-spectrum .note-body-text { font-size: 0.9rem; color: #dcdce4; line-height: 1.7; word-break: break-word; }
+#view-spectrum .note-body-text h1, #view-spectrum .note-body-text h2, #view-spectrum .note-body-text h3 {
+      font-family: var(--display); color: var(--neon-red); font-size: 0.95rem;
+      margin: 0.9rem 0 0.45rem; border-bottom: 1px dashed rgba(255,51,51,0.28); padding-bottom: 0.25rem;
+    }
+#view-spectrum .note-body-text p { margin-bottom: 0.6rem; }
+#view-spectrum .note-body-text p:last-child { margin-bottom: 0; }
+#view-spectrum .note-body-text ul, #view-spectrum .note-body-text ol { margin-left: 1.2rem; margin: 0.3rem 0 0.6rem 1.2rem; }
+#view-spectrum .note-body-text li { margin-bottom: 0.25rem; }
+#view-spectrum .note-body-text strong { color: #fff; font-weight: 700; }
+#view-spectrum .note-body-text em { color: var(--neon-yellow); font-style: italic; }
+#view-spectrum .note-body-text a { color: var(--neon-blue); }
+#view-spectrum .note-body-text blockquote {
+      border-left: 3px solid var(--neon-yellow);
+      background: rgba(255, 204, 0, 0.05);
+      padding: 0.55rem 0.85rem; margin: 0.65rem 0; font-style: italic; color: #d5d5dd;
+    }
+#view-spectrum .note-body-text code {
+      background: rgba(255,51,51,0.14); border: 1px solid rgba(255,51,51,0.28);
+      color: var(--neon-red); padding: 0.08rem 0.34rem; border-radius: 4px;
+      font-family: var(--mono); font-size: 0.82rem;
+    }
+#view-spectrum .note-body-text pre {
+      background: #000; border: 1px solid var(--line); padding: 0.8rem;
+      border-radius: var(--r-sm); overflow-x: auto; margin: 0.6rem 0;
+    }
+#view-spectrum .note-body-text pre code { background: transparent; border: none; padding: 0; color: #f0f0f0; }
+#view-spectrum .note-body-text hr { border: none; border-top: 1px solid var(--line); margin: 0.9rem 0; }/* ---------------- AUTHORS ---------------- */
+#view-spectrum .author-list { display: flex; flex-direction: column; gap: 0.5rem; }
+#view-spectrum .author-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.7rem 0.95rem;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--line);
+      border-radius: var(--r-sm);
+      font-size: 0.9rem; cursor: pointer;
+      transition: all .15s ease;
+    }
+#view-spectrum .author-item:hover { background: rgba(255,51,51,0.1); border-color: var(--neon-red); transform: translateX(3px); }
+#view-spectrum .author-count { font-family: var(--mono); color: var(--neon-red); font-size: 0.78rem; }/* ---------------- FORMS ---------------- */
+#view-spectrum form { display: flex; flex-direction: column; gap: 1rem; }
+#view-spectrum .input-group { display: flex; flex-direction: column; gap: 0.35rem; }
+#view-spectrum label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+#view-spectrum input, #view-spectrum select, #view-spectrum textarea {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid var(--line);
+      border-radius: var(--r-sm);
+      padding: 0.7rem 0.85rem;
+      color: #fff;
+      outline: none;
+      font-size: 0.9rem;
+      transition: border-color .15s ease, box-shadow .15s ease;
+      width: 100%;
+    }
+#view-spectrum input::placeholder, #view-spectrum textarea::placeholder { color: #5c5c68; }
+#view-spectrum textarea { resize: vertical; min-height: 130px; font-family: var(--mono); font-size: 0.85rem; line-height: 1.6; }
+#view-spectrum input:focus, #view-spectrum select:focus, #view-spectrum textarea:focus { border-color: var(--neon-red); box-shadow: 0 0 0 3px rgba(255,51,51,0.12); }
+#view-spectrum select option { background: #0d0d12; }
+#view-spectrum input[type="file"] { padding: 0.5rem; font-size: 0.8rem; color: var(--text-soft); }
+#view-spectrum input[type="file"]::file-selector-button {
+      background: rgba(255,51,51,0.12); border: 1px solid rgba(255,51,51,0.4);
+      color: #fff; padding: 0.35rem 0.7rem; border-radius: 5px; margin-right: 0.7rem; cursor: pointer;
+      font-family: var(--mono); font-size: 0.72rem;
+    }
+#view-spectrum .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 620px) {
+#view-spectrum .grid-2 { grid-template-columns: 1fr; } }
+#view-spectrum .checkbox-container {
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0.7rem 0.9rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--line);
+      border-radius: var(--r-sm);
+      cursor: pointer; user-select: none;
+      transition: border-color .15s ease;
+    }
+#view-spectrum .checkbox-container:hover { border-color: rgba(255,51,51,0.4); }
+#view-spectrum .checkbox-container input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--neon-red); cursor: pointer; flex: none; }
+#view-spectrum .checkbox-label { color: var(--text); font-size: 0.85rem; text-transform: none; letter-spacing: 0; font-family: 'Inter', sans-serif; }
+#view-spectrum .hint { font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted); line-height: 1.5; }/* ---------------- MODALS ---------------- */
+#view-spectrum .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(3, 3, 6, 0.9);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000; padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity .2s ease, visibility 0s linear .2s;
+    }
+#view-spectrum .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition: opacity .2s ease, visibility 0s linear 0s;
+    }
+#view-spectrum .modal-content {
+      background: #0b0b11;
+      border: 1px solid rgba(255,51,51,0.4);
+      border-radius: var(--r-lg);
+      padding: 1.6rem;
+      width: 100%; max-width: 680px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 0 45px rgba(255,51,51,0.16), var(--shadow);
+      transform: translateY(10px) scale(0.985);
+      transition: transform .22s cubic-bezier(.2,.8,.3,1);
+    }
+#view-spectrum .modal-overlay.active .modal-content { transform: translateY(0) scale(1); }
+#view-spectrum .modal-header {
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      margin-bottom: 1.3rem; padding-bottom: 0.9rem;
+      border-bottom: 1px solid var(--line);
+    }
+#view-spectrum .modal-title {
+      font-family: var(--display);
+      font-size: 0.92rem;
+      letter-spacing: 0.14em;
+      color: var(--neon-red);
+      text-transform: uppercase;
+    }
+#view-spectrum .modal-sub { font-family: var(--mono); font-size: 0.68rem; color: var(--text-muted); margin-top: 0.3rem; letter-spacing: 0.08em; }
+#view-spectrum .close-btn {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--line);
+      color: var(--text-muted); width: 30px; height: 30px; border-radius: 50%;
+      cursor: pointer; font-size: 0.9rem; line-height: 1; flex: none;
+      display: flex; align-items: center; justify-content: center;
+    }
+#view-spectrum .close-btn:hover { color: #fff; border-color: var(--neon-red); background: rgba(255,51,51,0.18); }/* ---------------- STATS ---------------- */
+#view-spectrum .detailed-stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.7rem; margin-bottom: 1.3rem;
+    }
+#view-spectrum .detailed-stat-item {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      padding: 0.9rem;
+      display: flex; flex-direction: column; gap: 0.25rem;
+    }
+#view-spectrum .detailed-stat-item .val { font-family: var(--display); font-size: 1.25rem; color: var(--neon-red); font-weight: 700; }
+#view-spectrum .detailed-stat-item .lbl { font-family: var(--mono); font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.12em; }/* ---------------- LOG HISTORY ---------------- */
+#view-spectrum .log-row {
+      background: rgba(0,0,0,0.45);
+      border: 1px solid var(--line);
+      border-left: 2px solid rgba(255,51,51,0.5);
+      border-radius: var(--r-sm);
+      padding: 0.75rem 0.95rem;
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    }
+#view-spectrum .log-pages { font-family: var(--mono); color: var(--neon-green); font-weight: 700; font-size: 0.85rem; white-space: nowrap; }/* ---------------- READER ---------------- */
+#view-spectrum .reader-content { width: 100%; max-width: 1400px; height: 92vh; padding: 1.1rem; display: flex; flex-direction: column; }
+#view-spectrum .reader-container {
+      width: 100%; flex: 1;
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      background: #101014;
+      margin-top: 0.9rem;
+      overflow: hidden; position: relative;
+    }
+#view-spectrum .reader-container embed, #view-spectrum .reader-container iframe { border: none; }/* ---------------- SHARE CARD ---------------- */
+#view-spectrum .card-generator-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+@media (max-width: 768px) {
+#view-spectrum .card-generator-grid { grid-template-columns: 1fr; } }
+#view-spectrum .share-card-container {
+      background: #121218;
+      padding: 1.7rem;
+      border-radius: var(--r-lg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; position: relative; min-height: 290px;
+    }
+#view-spectrum .share-card-title { font-family: var(--display); font-size: 0.72rem; letter-spacing: 0.24em; color: #8a8a96; text-transform: uppercase; margin-bottom: 0.4rem; }
+#view-spectrum .share-card-streak-val { font-family: var(--display); font-size: 3.3rem; font-weight: 900; color: #fff; text-shadow: 0 0 16px rgba(255,255,255,0.35); margin: 0.15rem 0; }
+#view-spectrum .share-card-stats-list {
+      display: flex; flex-direction: column; gap: 0.42rem; width: 100%;
+      margin-top: 1rem; padding-top: 0.8rem;
+      border-top: 1px dashed rgba(255,255,255,0.2); font-size: 0.83rem;
+    }
+#view-spectrum .share-card-stat-row { display: flex; justify-content: space-between; color: #e6e6ec; gap: 1rem; }
+#view-spectrum .share-card-stat-label { color: #8a8a96; }
+#view-spectrum .share-card-watermark { font-family: var(--display); font-size: 0.6rem; color: var(--neon-red); letter-spacing: 0.22em; margin-top: 1.1rem; opacity: 0.85; }/* ---------------- TOASTS ---------------- */
+#view-spectrum #toast-stack {
+      position: fixed; bottom: 1.2rem; right: 1.2rem;
+      display: flex; flex-direction: column; gap: 0.55rem;
+      z-index: 5000; pointer-events: none; max-width: min(92vw, 360px);
+    }
+#view-spectrum .toast {
+      background: rgba(14,14,20,0.97);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--neon-red);
+      border-radius: var(--r-sm);
+      padding: 0.75rem 0.95rem;
+      font-size: 0.84rem; color: var(--text);
+      box-shadow: var(--shadow);
+      animation: toast-in .22s ease-out;
+    }
+#view-spectrum .toast.ok { border-left-color: var(--neon-green); }
+#view-spectrum .toast.warn { border-left-color: var(--neon-yellow); }
+#view-spectrum .toast.err { border-left-color: #ff4757; }
+@keyframes toast-in {
+from { opacity: 0; transform: translateX(14px); }
+to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+#view-spectrum, #view-spectrum *, #view-spectrum *::before, #view-spectrum *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+    }
+@media (max-width: 520px) {
+#view-spectrum { padding: 1rem 0.7rem 3rem; }
+#view-spectrum .modal-content { padding: 1.2rem; border-radius: var(--r-md); }
+#view-spectrum .hero-streak { padding: 1.3rem 1.2rem; }
+#view-spectrum .panel { padding: 1rem; }
+    }
+  
+
+  /* --- Spectrum yerleşim düzeltmeleri --- */
+  /* .view.on giriş animasyonu transform canlandırdığı için sabitlenmiş
+     (position:fixed) öğelere kapsayıcı blok yaratıyor; bu da Spectrum'un
+     modallarını ekran yerine görünümün içine hapsediyordu. */
+  #view-spectrum.on{animation:none;}
+  /* modal açıkken arka planın kaymaması için — Spectrum'da kaydırılan
+     öğe body değil, görünümün kendisi */
+  body.modal-open #view-spectrum{overflow:hidden;}
 </style>
 </head>
 <body data-alarm="YESIL">
@@ -942,6 +1794,615 @@
     <section class="view" id="view-kilavuz">
       <div class="view-title">Kılavuz &amp; Rehber<small>sistem kuralları</small></div>
       <div class="kilavuz" id="kilavuz-host"></div>
+    </section>
+
+    <!-- ===================== SPECTRUM (OKUMA TAKİBİ) ===================== -->
+    <section class="view" id="view-spectrum">
+
+
+  <div class="container">
+    <header>
+      <div>
+        <div class="brand-eyebrow"><span class="live-dot"></span> DİJİTAL OKUMA KONSOLU</div>
+        <h1>STAŃCZYK <span>SPECTRUM</span></h1>
+      </div>
+      <div class="header-actions">
+        <button class="cyber-btn ghost" onclick="openBackupModal()">YEDEKLEME</button>
+        <input type="file" id="import-file-input" style="display:none" onchange="importAllData(event)">
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-streak" id="hero-streak-card">
+        <div class="hero-label">ZİNCİRİ KIRMA</div>
+        <div class="hero-streak-value"><span id="hero-streak-count">0</span><small>GÜN</small></div>
+        <div class="hero-status" id="hero-status">Bugün henüz oturum kaydedilmedi</div>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><span class="v" id="hero-today">0</span><span class="k">Bugün / sayfa</span></div>
+        <div class="hero-stat"><span class="v" id="hero-week">0</span><span class="k">Bu hafta / sayfa</span></div>
+        <div class="hero-stat"><span class="v" id="hero-reading">0</span><span class="k">Devam eden</span></div>
+        <div class="hero-stat"><span class="v" id="hero-done">0</span><span class="k">Biten kitap</span></div>
+      </div>
+    </section>
+
+    <!-- HEATMAP -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Okuma ısı haritası · son 6 ay</div>
+        <div class="heat-legend">
+          <span>AZ</span>
+          <i style="background: rgba(255,255,255,0.05)"></i>
+          <i style="background: rgba(255,51,51,0.3)"></i>
+          <i style="background: rgba(255,51,51,0.55)"></i>
+          <i style="background: rgba(255,51,51,0.8)"></i>
+          <i style="background: #ff3333"></i>
+          <span>ÇOK</span>
+        </div>
+      </div>
+      <div class="heat-scroll">
+        <div class="heat-inner">
+          <div class="heat-weekdays">
+            <span>Pzt</span><span></span><span>Çar</span><span></span><span>Cum</span><span></span><span>Paz</span>
+          </div>
+          <div>
+            <div class="heat-months" id="heatmap-months"></div>
+            <div class="heatmap-grid" id="heatmap-container"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACTIONS -->
+    <div class="action-bar">
+      <button class="cyber-btn solid" onclick="openModal('modal-add-book')">+ KİTAP EKLE</button>
+      <button class="cyber-btn" onclick="openModal('modal-add-log')">+ OTURUM EKLE</button>
+      <button class="cyber-btn" onclick="openWishlistModal()">İSTEDİKLERİM <span class="btn-count" id="wish-btn-count">0</span></button>
+      <button class="cyber-btn ghost" onclick="openDailyLogsModal()">GÜNLÜK</button>
+      <button class="cyber-btn ghost" onclick="openModal('modal-authors')">YAZARLAR</button>
+      <button class="cyber-btn ghost" onclick="openStatsModal()">İSTATİSTİKLER</button>
+      <button class="cyber-btn ghost" onclick="openStreakCardModal()">KART OLUŞTUR</button>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Ara</label>
+        <input type="text" id="search-input" placeholder="Kitap, yazar, kategori, etiket..." oninput="handleSearch(this.value)">
+      </div>
+      <div class="filter-group">
+        <label>Durum</label>
+        <select id="filter-select" onchange="setFilter(this.value)">
+          <option value="all">Tüm kitaplar</option>
+          <option value="reading">Devam edenler</option>
+          <option value="completed">Biten kitaplar</option>
+          <option value="hasFile">E-kitap dosyası olanlar</option>
+          <option value="special">Özel işaretliler</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Kategori</label>
+        <select id="category-filter-select" onchange="setCategoryFilter(this.value)">
+          <option value="all">Tüm kategoriler</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Tür / etiket</label>
+        <select id="tag-filter-select" onchange="setTagFilter(this.value)">
+          <option value="all">Tüm türler</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Sırala</label>
+        <select id="sort-select" onchange="setSort(this.value)">
+          <option value="default">Varsayılan (eklenme)</option>
+          <option value="title-asc">İsim (A → Z)</option>
+          <option value="title-desc">İsim (Z → A)</option>
+          <option value="progress-desc">İlerleme (çok → az)</option>
+          <option value="progress-asc">İlerleme (az → çok)</option>
+          <option value="pages-desc">Sayfa (çok → az)</option>
+          <option value="pages-asc">Sayfa (az → çok)</option>
+        </select>
+      </div>
+      <div class="filter-group" id="active-filter-container"></div>
+    </div>
+
+    <div class="list-meta" id="list-meta"></div>
+    <div class="book-list" id="book-list-container"></div>
+  </div>
+
+  <!-- ============ MODAL: KİTAP EKLE ============ -->
+  <div class="modal-overlay" id="modal-add-book">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Kütüphaneye kitap ekle</div>
+          <div class="modal-sub">Okumaya başladığın ya da rafındaki kitaplar</div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-add-book')">✕</button>
+      </div>
+      <form id="book-form">
+        <div class="input-group">
+          <label>Kitap adı</label>
+          <input type="text" id="book-title" placeholder="Cesur Yeni Dünya" required>
+        </div>
+        <div class="input-group">
+          <label>Yazar</label>
+          <input type="text" id="book-author" placeholder="Aldous Huxley" required>
+        </div>
+        <div class="grid-2">
+          <div class="input-group">
+            <label>Ana kategori (opsiyonel)</label>
+            <input type="text" id="book-category" placeholder="Roman, Felsefe, Ders">
+          </div>
+          <div class="input-group">
+            <label>Toplam sayfa</label>
+            <input type="number" id="book-total-pages" min="1" placeholder="272" required>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Türler / etiketler (virgülle ayır)</label>
+          <input type="text" id="book-tags" placeholder="Distopya, Klasik, Bilim Kurgu">
+        </div>
+        <div class="input-group">
+          <label>Arkaplan görsel URL (opsiyonel)</label>
+          <input type="url" id="book-cover-url" placeholder="https://ornek.com/gorsel.jpg">
+        </div>
+        <div class="input-group">
+          <label>E-kitap dosyası (.pdf, .epub)</label>
+          <input type="file" id="book-file">
+          <span class="hint">.pdf veya .epub seç</span>
+        </div>
+        <label class="checkbox-container">
+          <input type="checkbox" id="book-show-eta">
+          <span class="checkbox-label">Tahmini bitiş süresini kartta göster</span>
+        </label>
+        <label class="checkbox-container">
+          <input type="checkbox" id="book-is-special">
+          <span class="checkbox-label">Özel işaretli kitap</span>
+        </label>
+        <button type="submit" class="cyber-btn solid" id="add-submit-btn" style="justify-content:center;padding:0.85rem">KÜTÜPHANEYE EKLE</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: OTURUM EKLE ============ -->
+  <div class="modal-overlay" id="modal-add-log">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Günlük oturum ekle</div>
+          <div class="modal-sub" id="log-date-label"></div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-add-log')">✕</button>
+      </div>
+      <form id="log-form">
+        <div class="input-group">
+          <label>Kitap ara</label>
+          <input type="text" id="log-book-search" placeholder="Listeyi süzmek için yaz..." oninput="filterLogBooks(this.value)">
+        </div>
+        <div class="input-group">
+          <label>Kitap seç</label>
+          <select id="log-book-select" required size="6" style="height:150px"></select>
+        </div>
+        <div class="input-group">
+          <label>Bugün kaç sayfa okudun?</label>
+          <input type="number" id="log-pages" min="1" placeholder="35" required>
+        </div>
+        <button type="submit" class="cyber-btn solid" style="justify-content:center;padding:0.85rem">OTURUMU KAYDET</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: YEDEKLEME ============ -->
+  <div class="modal-overlay" id="modal-backup">
+    <div class="modal-content" style="max-width:720px">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Yedekleme ve geri yükleme</div>
+          <div class="modal-sub">Kitaplar, oturumlar, notlar ve istek listesi</div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-backup')">✕</button>
+      </div>
+
+      <div class="input-group" style="margin-bottom:1.4rem">
+        <label>1 · Yedek al</label>
+        <div class="grid-2" style="gap:0.6rem">
+          <button type="button" class="cyber-btn solid" style="justify-content:center;padding:0.8rem" onclick="exportAllData()">DOSYA OLARAK İNDİR</button>
+          <button type="button" class="cyber-btn" style="justify-content:center;padding:0.8rem" onclick="generateBackupText()">YEDEK METNİNİ KOPYALA</button>
+        </div>
+        <span class="hint">Dosya, e-kitaplar dahil her şeyi içerir. Metin yedeği e-kitap dosyalarını içermez; not defterine veya kendine mesaj olarak yapıştırmak için uygundur.</span>
+        <div id="backup-out-wrap" style="display:none;margin-top:0.6rem">
+          <textarea id="backup-out" readonly style="min-height:110px"></textarea>
+          <span class="hint">Kopyalama çalışmadıysa metni buradan elle seçip kopyalayabilirsin.</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>2 · Geri yükle</label>
+        <button type="button" class="cyber-btn ghost" style="justify-content:center;padding:0.8rem" onclick="document.getElementById('import-file-input').click()">DOSYADAN YÜKLE</button>
+        <textarea id="backup-in" placeholder="Ya da yedek metnini buraya yapıştır..." style="min-height:110px;margin-top:0.6rem"></textarea>
+        <button type="button" class="cyber-btn" style="justify-content:center;padding:0.8rem;margin-top:0.4rem" onclick="restoreFromText()">METİNDEN GERİ YÜKLE</button>
+        <span class="hint">Geri yükleme mevcut verilerin üzerine yazar.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: İSTEDİKLERİM ============ -->
+  <div class="modal-overlay" id="modal-wishlist">
+    <div class="modal-content" style="max-width:760px">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">İstediklerim</div>
+          <div class="modal-sub">Okumak istediğin kitaplar — düz liste, görselsiz</div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-wishlist')">✕</button>
+      </div>
+
+      <form id="wish-form" class="wish-toolbar" style="gap:0.6rem">
+        <input type="text" id="wish-new-title" placeholder="Kitap adı" required>
+        <input type="text" id="wish-new-author" placeholder="Yazar (opsiyonel)">
+        <button type="submit" class="cyber-btn solid" style="justify-content:center">LİSTEYE EKLE</button>
+      </form>
+
+      <div class="wish-toolbar" style="grid-template-columns:1fr 200px;margin-bottom:0.8rem">
+        <input type="text" id="wish-search" placeholder="Listede ara..." oninput="setWishSearch(this.value)">
+        <select id="wish-sort" onchange="setWishSort(this.value)">
+          <option value="added">Sıra: eklenme</option>
+          <option value="priority">Sıra: öncelik</option>
+          <option value="title">Sıra: isim (A → Z)</option>
+        </select>
+      </div>
+
+      <div class="wish-list" id="wishlist-container"></div>
+      <div class="hint" style="margin-top:0.9rem">Bir satıra dokun → o kitabın kendi ekranı açılır, notlarını orada yazarsın.</div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: İSTEDİĞİM KİTAP DETAY ============ -->
+  <div class="modal-overlay" id="modal-wish-detail">
+    <div class="modal-content" style="max-width:720px">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="wish-d-heading">Kitap</div>
+          <div class="modal-sub" id="wish-d-added"></div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-wish-detail')">✕</button>
+      </div>
+
+      <form id="wish-detail-form">
+        <div class="grid-2">
+          <div class="input-group">
+            <label>Kitap adı</label>
+            <input type="text" id="wish-d-title" required>
+          </div>
+          <div class="input-group">
+            <label>Yazar</label>
+            <input type="text" id="wish-d-author" placeholder="Bilinmiyor">
+          </div>
+        </div>
+
+        <div class="wish-detail-grid">
+          <div class="input-group">
+            <label>Tahmini sayfa</label>
+            <input type="number" id="wish-d-pages" min="1" placeholder="320">
+          </div>
+          <div class="input-group">
+            <label>Kategori</label>
+            <input type="text" id="wish-d-category" placeholder="Roman">
+          </div>
+          <div class="input-group">
+            <label>Öncelik</label>
+            <select id="wish-d-priority">
+              <option value="high">Yüksek</option>
+              <option value="mid" selected>Orta</option>
+              <option value="low">Düşük</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Neden okumak istiyorum?</label>
+          <input type="text" id="wish-d-reason" placeholder="Tek cümlelik gerekçe">
+        </div>
+
+        <div class="input-group">
+          <label>Not başlığı</label>
+          <input type="text" id="wish-d-note-header" placeholder="Ön araştırma / alıntılar">
+        </div>
+
+        <div class="input-group">
+          <label>Notlar (markdown destekli)</label>
+          <div class="segmented" style="margin-bottom:0.4rem">
+            <button type="button" id="wish-tab-write" class="active" onclick="setWishNoteTab('write')">YAZ</button>
+            <button type="button" id="wish-tab-preview" onclick="setWishNoteTab('preview')">ÖNİZLE</button>
+          </div>
+          <textarea id="wish-d-note-body" placeholder="# Başlık&#10;**Koyu**, *eğik*, > alıntı&#10;- madde 1&#10;- madde 2" oninput="if(wishNoteTab==='preview') renderWishPreview()"></textarea>
+          <div id="wish-d-preview" class="book-note-display" style="display:none"></div>
+        </div>
+
+        <div class="grid-2">
+          <button type="submit" class="cyber-btn solid" style="justify-content:center;padding:0.8rem">DEĞİŞİKLİKLERİ KAYDET</button>
+          <button type="button" class="cyber-btn" style="justify-content:center;padding:0.8rem" onclick="moveWishToLibrary()">KÜTÜPHANEYE TAŞI</button>
+        </div>
+        <div class="grid-2">
+          <button type="button" class="cyber-btn ghost" style="justify-content:center" onclick="exportWishNote()">NOTU İNDİR (.MD)</button>
+          <button type="button" class="cyber-btn danger" style="justify-content:center" onclick="deleteWish()">LİSTEDEN SİL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: GÜNLÜK ============ -->
+  <div class="modal-overlay" id="modal-daily-logs">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Oturum geçmişi</div>
+          <div class="modal-sub">Son 10 kayıt</div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-daily-logs')">✕</button>
+      </div>
+      <div id="daily-logs-container" style="display:flex;flex-direction:column;gap:0.5rem"></div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: KİTAP NOTU GÖRÜNTÜLE ============ -->
+  <div class="modal-overlay" id="modal-view-note">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="view-note-title">Kitap notu</div>
+          <div class="modal-sub" id="view-note-subtitle"></div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-view-note')">✕</button>
+      </div>
+      <div class="book-note-display">
+        <div class="note-header-text" id="view-note-header"></div>
+        <div class="note-body-text" id="view-note-body"></div>
+      </div>
+      <button class="cyber-btn ghost" id="export-view-note-btn" style="width:100%;margin-top:1.1rem;justify-content:center;padding:0.8rem">NOTU MARKDOWN (.MD) OLARAK İNDİR</button>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: YAZARLAR ============ -->
+  <div class="modal-overlay" id="modal-authors">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Yazar kütüphanesi</div>
+          <div class="modal-sub">Bir yazara dokun, kütüphane o yazara göre süzülsün</div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-authors')">✕</button>
+      </div>
+      <div class="author-list" id="author-list-container"></div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: İSTATİSTİKLER ============ -->
+  <div class="modal-overlay" id="modal-stats">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Okuma analizi</div>
+          <div class="modal-sub">Tüm kayıtlardan hesaplandı</div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-stats')">✕</button>
+      </div>
+
+      <div class="detailed-stats-grid">
+        <div class="detailed-stat-item"><span class="lbl">Bugün okunan</span><span class="val" id="stat-today-pages" style="color:var(--neon-green)">0 syf</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Toplam kitap</span><span class="val" id="stat-total-books">0</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Biten kitaplar</span><span class="val" id="stat-completed-books">0</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Toplam yazar</span><span class="val" id="stat-total-authors">0</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Güncel seri</span><span class="val" id="stat-streak" style="color:var(--neon-yellow)">0 gün</span></div>
+        <div class="detailed-stat-item"><span class="lbl">En uzun seri</span><span class="val" id="stat-longest-streak" style="color:var(--neon-yellow)">0 gün</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Bu hafta</span><span class="val" id="stat-week-pages">0 syf</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Bu ay</span><span class="val" id="stat-month-pages">0 syf</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Bu yıl</span><span class="val" id="stat-year-pages">0 syf</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Tüm zamanlar</span><span class="val" id="stat-alltime-pages">0 syf</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Aktif gün ortalaması</span><span class="val" id="stat-daily-avg">0 syf</span></div>
+        <div class="detailed-stat-item"><span class="lbl">Tamamlama oranı</span><span class="val" id="stat-completion-rate">%0</span></div>
+        <div class="detailed-stat-item"><span class="lbl">İstek listesi</span><span class="val" id="stat-wishlist">0</span></div>
+        <div class="detailed-stat-item" style="grid-column:1/-1"><span class="lbl">En çok okunan yazar</span><span class="val" id="stat-top-author" style="font-size:1.05rem;color:#fff">-</span></div>
+      </div>
+
+      <button class="cyber-btn solid" onclick="exportStatsPDF()" style="width:100%;justify-content:center;padding:0.85rem">İSTATİSTİK RAPORUNU İNDİR (PDF)</button>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: PAYLAŞIM KARTI ============ -->
+  <div class="modal-overlay" id="modal-streak-card">
+    <div class="modal-content" style="max-width:860px">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Zinciri kırma kartı</div>
+          <div class="modal-sub">Önizle, ayarla, PNG olarak indir</div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-streak-card')">✕</button>
+      </div>
+
+      <div class="card-generator-grid">
+        <div style="display:flex;flex-direction:column;gap:0.85rem">
+          <div class="input-group">
+            <label>Dahil edilecek istatistikler</label>
+            <div style="display:flex;flex-direction:column;gap:0.45rem;margin-top:0.2rem">
+              <label class="checkbox-container"><input type="checkbox" id="card-inc-today" checked onchange="updateCardPreview()"><span class="checkbox-label">Bugün okunan sayfa</span></label>
+              <label class="checkbox-container"><input type="checkbox" id="card-inc-total" checked onchange="updateCardPreview()"><span class="checkbox-label">Toplam & biten kitap</span></label>
+              <label class="checkbox-container"><input type="checkbox" id="card-inc-alltime" checked onchange="updateCardPreview()"><span class="checkbox-label">Tüm zamanlar toplam sayfa</span></label>
+              <label class="checkbox-container"><input type="checkbox" id="card-inc-topauthor" onchange="updateCardPreview()"><span class="checkbox-label">Favori yazar</span></label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Çerçeve stili & rengi</label>
+            <div class="grid-2" style="gap:0.5rem">
+              <select id="card-border-style" onchange="updateCardPreview()">
+                <option value="important">Önemli (kalın)</option>
+                <option value="normal">Varsayılan (ince)</option>
+                <option value="critical">Kritik (kesikli)</option>
+                <option value="legendary">Efsane (çift katman)</option>
+              </select>
+              <select id="card-border-color" onchange="updateCardPreview()">
+                <option value="#ff3333">Kırmızı neon</option>
+                <option value="#00ff88">Yeşil neon</option>
+                <option value="#ffcc00">Sarı neon</option>
+                <option value="#00f3ff">Mavi neon</option>
+                <option value="#ffffff">Beyaz</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Arkaplan görsel URL (opsiyonel)</label>
+            <input type="url" id="card-bg-url" placeholder="https://..." oninput="updateCardPreview()">
+          </div>
+
+          <div class="input-group">
+            <label>Kişisel not (opsiyonel)</label>
+            <input type="text" id="card-custom-note" placeholder="Hedefe doğru adım adım" oninput="updateCardPreview()">
+          </div>
+
+          <button class="cyber-btn solid" onclick="downloadStreakCardPNG()" style="justify-content:center;padding:0.85rem">KARTI İNDİR (PNG)</button>
+        </div>
+
+        <div>
+          <label style="display:block;margin-bottom:0.5rem">Canlı önizleme</label>
+          <div id="shareable-card" class="share-card-container border-important" style="--card-border-color:#ff3333">
+            <div class="share-card-title">ZİNCİRİ KIRMA</div>
+            <div class="share-card-streak-val" id="preview-streak-val">0 GÜN</div>
+            <div class="share-card-stats-list" id="preview-stats-container"></div>
+            <div id="preview-custom-note" style="font-size:0.8rem;color:#ffcc00;margin-top:0.8rem;font-style:italic"></div>
+            <div class="share-card-watermark">STAŃCZYK SPECTRUM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: KİTAP DÜZENLE ============ -->
+  <div class="modal-overlay" id="modal-edit-book">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Kitabı düzenle</div>
+          <div class="modal-sub">Bilgiler, çerçeve ve markdown notlar</div>
+        </div>
+        <button class="close-btn" onclick="closeModal('modal-edit-book')">✕</button>
+      </div>
+      <form id="edit-form">
+        <input type="hidden" id="edit-book-id">
+        <div class="input-group">
+          <label>Kitap adı</label>
+          <input type="text" id="edit-title" required>
+        </div>
+        <div class="input-group">
+          <label>Yazar</label>
+          <input type="text" id="edit-author" required>
+        </div>
+        <div class="grid-2">
+          <div class="input-group">
+            <label>Ana kategori</label>
+            <input type="text" id="edit-category" placeholder="Roman, Felsefe">
+          </div>
+          <div class="input-group">
+            <label>Türler / etiketler</label>
+            <input type="text" id="edit-tags" placeholder="Distopya, Klasik">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="input-group">
+            <label>Toplam sayfa</label>
+            <input type="number" id="edit-total-pages" min="1" required>
+          </div>
+          <div class="input-group">
+            <label>Mevcut sayfa</label>
+            <input type="number" id="edit-current-page" min="0" required>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Arkaplan görsel URL</label>
+          <input type="url" id="edit-cover-url">
+        </div>
+
+        <div class="input-group">
+          <label>E-kitap dosyası</label>
+          <div id="file-status-container"></div>
+          <input type="file" id="edit-file" style="margin-top:0.5rem">
+          <span class="hint">.pdf veya .epub seç</span>
+        </div>
+
+        <label class="checkbox-container">
+          <input type="checkbox" id="edit-show-eta">
+          <span class="checkbox-label">Tahmini bitiş süresini kartta göster</span>
+        </label>
+        <label class="checkbox-container">
+          <input type="checkbox" id="edit-is-special">
+          <span class="checkbox-label">Özel işaretli kitap</span>
+        </label>
+
+        <div class="grid-2">
+          <div class="input-group">
+            <label>Çerçeve hiyerarşisi</label>
+            <select id="edit-border-style">
+              <option value="normal">Varsayılan (ince)</option>
+              <option value="important">Önemli (kalın + glow)</option>
+              <option value="critical">Kritik (kesikli)</option>
+              <option value="legendary">Efsane (asimetrik)</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Çerçeve rengi</label>
+            <select id="edit-border-color">
+              <option value="#ff3333">Kırmızı neon</option>
+              <option value="#00f3ff">Mavi neon</option>
+              <option value="#00ff88">Yeşil neon</option>
+              <option value="#ffcc00">Sarı neon</option>
+              <option value="#ff00ff">Mor neon</option>
+              <option value="#ffffff">Beyaz</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Not başlığı</label>
+          <input type="text" id="edit-note-header" placeholder="Ana karakter ve felsefi çözümleme">
+        </div>
+
+        <div class="input-group">
+          <label>Kitap notu (markdown)</label>
+          <textarea id="edit-note-body" placeholder="# Başlık&#10;**Koyu**, *eğik*, > alıntı&#10;- madde 1&#10;`kod`"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:0.4rem;flex-wrap:wrap">
+            <span class="hint">Markdown desteklenir: # başlık, **koyu**, - liste, &gt; alıntı, `kod`</span>
+            <button type="button" class="action-btn" onclick="exportNoteFromEditModal()" style="color:var(--neon-yellow);border-color:rgba(255,204,0,0.4)">NOTU İNDİR (.MD)</button>
+          </div>
+        </div>
+
+        <button type="submit" class="cyber-btn solid" id="edit-submit-btn" style="justify-content:center;padding:0.85rem">DEĞİŞİKLİKLERİ KAYDET</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ READER ============ -->
+  <div class="modal-overlay" id="reader-overlay">
+    <div class="modal-content reader-content">
+      <div class="modal-header" style="margin-bottom:0;padding-bottom:0.8rem">
+        <div class="modal-title" id="reader-title">Okuyucu</div>
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+          <div id="epub-nav-controls" style="display:none;gap:0.4rem">
+            <button class="action-btn" onclick="prevEpubPage()">← ÖNCEKİ</button>
+            <button class="action-btn" onclick="nextEpubPage()">SONRAKİ →</button>
+          </div>
+          <button class="action-btn read-btn" id="open-new-tab-btn" onclick="openPdfInNewTab()">YENİ SEKMEDE AÇ</button>
+          <button class="close-btn" onclick="closeReader()">✕</button>
+        </div>
+      </div>
+      <div class="reader-container" id="reader-container"></div>
+    </div>
+  </div>
+
+  <div id="toast-stack"></div>
     </section>
 
     <!-- ===================== SİSTEM ===================== -->
@@ -5876,6 +7337,7 @@ var SCREENS=[
   {v:"aliskanlik",k:"Alışkanlık",d:"Habit tracker",i:"◫"},
   {v:"notlar",k:"Notlar",d:"Markdown not odası",i:"≣"},
   {v:"arsiv",k:"Arşiv",d:"Tüketim + veri temizliği",i:"▣"},
+  {v:"spectrum",k:"Spectrum",d:"Okuma takibi · kütüphane",i:"◐"},
   {v:"kilavuz",k:"Kılavuz",d:"Sistem kuralları",i:"?"},
   {v:"sistem",k:"Sistem",d:"Ayarlar · yedek",i:"⚙"}
 ];
@@ -6446,6 +7908,13 @@ function fullRender(){
   safe(renderKilavuz);
   safe(renderHub);
   safe(renderSistem);
+  safe(spectrumTazele);
+}
+/* Spectrum ekranı kendi global betiğinde yaşıyor; görünür olunca listelerini
+   yeniden çizdiririz (gizliyken ölçüler hatalı çıkabiliyor). */
+function spectrumTazele(){
+  try{ if(typeof window.render==="function") window.render(); }catch(e){}
+  try{ if(typeof window.renderWishlist==="function") window.renderWishlist(); }catch(e){}
 }
 function switchView(v){
   activeView=v;
@@ -6466,6 +7935,7 @@ function switchView(v){
   if(v==="obp")safe(renderObp);
   if(v==="matdeneme")safe(renderMatDeneme);
   if(v==="kilavuz")safe(renderKilavuz);
+  if(v==="spectrum")safe(spectrumTazele);
   if(v==="pano"){safe(renderDurum);safe(renderProgram);safe(renderBoard);}
   if(v==="sistem"){safe(renderHub);safe(renderSistem);}
   try{document.querySelector('.view.on').scrollTop=0;}catch(e){}
@@ -6682,5 +8152,1432 @@ Promise.all([getRaw(DB_KEY),getRaw("kronos:db:v3"),getRaw("kronos:tasks:v1"),
 });
 })();
 </script>
+
+<!-- ======================================================================
+     SPECTRUM · okuma takibi motoru (kaynak dosyadan bire bir)
+     KRONOS betiği IIFE içinde olduğu için bu bloğun global adları
+     (books, logs, wishlist, $, toast, render...) çakışmaz.
+     ====================================================================== -->
+<script>
+
+    /* ==================== HELPERS ==================== */
+    const $ = id => document.getElementById(id);
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[c]);
+    }
+
+    function toLocalDateStr(d) {
+      const x = new Date(d);
+      return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+    }
+
+    const todayStr = () => toLocalDateStr(new Date());
+
+    function parseDate(ds) { return new Date(ds + 'T00:00:00'); }
+
+    function toast(message, type) {
+      const stack = $('toast-stack');
+      const el = document.createElement('div');
+      el.className = 'toast ' + (type || '');
+      el.textContent = message;
+      stack.appendChild(el);
+      setTimeout(() => {
+        el.style.transition = 'opacity .3s ease, transform .3s ease';
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(14px)';
+        setTimeout(() => el.remove(), 320);
+      }, 3200);
+    }
+
+    function safeFileName(str) {
+      return String(str || 'dosya')
+        .replace(/[ğ]/g, 'g').replace(/[Ğ]/g, 'G')
+        .replace(/[ü]/g, 'u').replace(/[Ü]/g, 'U')
+        .replace(/[ş]/g, 's').replace(/[Ş]/g, 'S')
+        .replace(/[ı]/g, 'i').replace(/[İ]/g, 'I')
+        .replace(/[ö]/g, 'o').replace(/[Ö]/g, 'O')
+        .replace(/[ç]/g, 'c').replace(/[Ç]/g, 'C')
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'dosya';
+    }
+
+    function downloadText(filename, content, mime) {
+      const blob = new Blob([content], { type: (mime || 'text/plain') + ';charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1500);
+    }
+
+    if (window.marked && marked.setOptions) marked.setOptions({ breaks: true });
+    function md(text) { return window.marked ? marked.parse(text) : escapeHtml(text); }
+
+    /* ==================== STATE ==================== */
+    let books = [];
+    let logs = [];
+    let wishlist = [];
+
+    try { books = JSON.parse(localStorage.getItem('cyberread_books')) || []; } catch (e) { books = []; }
+    try { logs = JSON.parse(localStorage.getItem('cyberread_logs')) || []; } catch (e) { logs = []; }
+    try { wishlist = JSON.parse(localStorage.getItem('cyberread_wishlist')) || []; } catch (e) { wishlist = []; }
+
+    books = books.map(b => ({
+      id: String(b.id),
+      title: b.title || 'İsimsiz',
+      author: b.author || 'Bilinmiyor',
+      category: b.category || '',
+      tags: Array.isArray(b.tags) ? b.tags : [],
+      totalPages: Number(b.totalPages) || 1,
+      currentPage: Number(b.currentPage) || 0,
+      coverUrl: b.coverUrl || '',
+      borderStyle: b.borderStyle || 'normal',
+      borderColor: b.borderColor || '#ff3333',
+      noteHeader: b.noteHeader || '',
+      noteBody: b.noteBody || '',
+      showEta: !!b.showEta,
+      isSpecial: !!b.isSpecial,
+      hasFile: !!b.hasFile
+    }));
+
+    wishlist = wishlist.map(w => ({
+      id: String(w.id),
+      title: w.title || 'İsimsiz',
+      author: w.author || '',
+      category: w.category || '',
+      pages: Number(w.pages) || 0,
+      priority: ['high', 'mid', 'low'].includes(w.priority) ? w.priority : 'mid',
+      reason: w.reason || '',
+      noteHeader: w.noteHeader || '',
+      noteBody: w.noteBody || '',
+      addedAt: w.addedAt || todayStr()
+    }));
+
+    let activePdfBlobUrl = null;
+    let currentEpubBook = null;
+    let currentEpubRendition = null;
+
+    let activeFilter = 'all';
+    let activeCategoryFilter = 'all';
+    let activeTagFilter = 'all';
+    let activeSort = 'default';
+    let searchQuery = '';
+
+    let wishSearch = '';
+    let wishSort = 'added';
+    let currentWishId = null;
+    let wishNoteTab = 'write';
+
+    let authorIndex = [];
+    let pressTimer = null;
+    let isLongPressTriggered = false;
+    let openModalCount = 0;
+
+    /* ==================== INDEXEDDB ==================== */
+    let dbInstance = null;
+    function getDB() {
+      return new Promise((resolve, reject) => {
+        if (dbInstance) return resolve(dbInstance);
+        const req = indexedDB.open("CyberReadFilesDB_v5", 1);
+        req.onupgradeneeded = e => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains("pdfFiles")) db.createObjectStore("pdfFiles", { keyPath: "bookId" });
+        };
+        req.onsuccess = e => { dbInstance = e.target.result; resolve(dbInstance); };
+        req.onerror = e => reject(e.target.error);
+      });
+    }
+
+    /* ==================== DOM REFS ==================== */
+    const bookForm = $('book-form');
+    const logForm = $('log-form');
+    const editForm = $('edit-form');
+    const wishForm = $('wish-form');
+    const wishDetailForm = $('wish-detail-form');
+    const bookListContainer = $('book-list-container');
+    const authorListContainer = $('author-list-container');
+    const logBookSelect = $('log-book-select');
+    const readerContainer = $('reader-container');
+    const readerTitle = $('reader-title');
+    const epubNavControls = $('epub-nav-controls');
+    const openNewTabBtn = $('open-new-tab-btn');
+
+    /* ==================== SAVE ==================== */
+    function persist() {
+      localStorage.setItem('cyberread_books', JSON.stringify(books));
+      localStorage.setItem('cyberread_logs', JSON.stringify(logs));
+      localStorage.setItem('cyberread_wishlist', JSON.stringify(wishlist));
+    }
+
+    function saveAndRender() { persist(); render(); }
+
+    /* ==================== MODALS ==================== */
+    function openModal(id) {
+      const el = $(id);
+      if (!el) return;
+      if (!el.classList.contains('active')) openModalCount++;
+      el.classList.add('active');
+      document.body.classList.add('modal-open');
+      if (id === 'modal-add-log') {
+        $('log-book-search').value = '';
+        $('log-date-label').innerText = new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
+        filterLogBooks('');
+      }
+    }
+
+    function closeModal(id) {
+      const el = $(id);
+      if (!el) return;
+      if (el.classList.contains('active')) openModalCount = Math.max(0, openModalCount - 1);
+      el.classList.remove('active');
+      if (openModalCount === 0) document.body.classList.remove('modal-open');
+    }
+
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', e => {
+        if (e.target === overlay) {
+          if (overlay.id === 'reader-overlay') closeReader();
+          else closeModal(overlay.id);
+        }
+      });
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        const open = Array.from(document.querySelectorAll('.modal-overlay.active'));
+        const last = open[open.length - 1];
+        if (last) { last.id === 'reader-overlay' ? closeReader() : closeModal(last.id); }
+      }
+      if ($('reader-overlay').classList.contains('active') && currentEpubRendition) {
+        if (e.key === 'ArrowLeft') prevEpubPage();
+        if (e.key === 'ArrowRight') nextEpubPage();
+      }
+    });
+
+    /* ==================== STREAK & STATS ==================== */
+    function getStreakInfo() {
+      const loggedDates = new Set(logs.map(l => l.date));
+      const today = todayStr();
+      const hasLoggedToday = loggedDates.has(today);
+
+      let streak = 0;
+      const checkDate = new Date();
+
+      if (!hasLoggedToday) {
+        checkDate.setDate(checkDate.getDate() - 1);
+        if (!loggedDates.has(toLocalDateStr(checkDate))) return { streak: 0, hasLoggedToday: false };
+      }
+
+      while (loggedDates.has(toLocalDateStr(checkDate))) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+      return { streak, hasLoggedToday };
+    }
+
+    function getLongestStreak() {
+      const dates = Array.from(new Set(logs.map(l => l.date))).sort();
+      let best = 0, cur = 0, prev = null;
+      dates.forEach(ds => {
+        const d = parseDate(ds);
+        cur = (prev && Math.round((d - prev) / 86400000) === 1) ? cur + 1 : 1;
+        if (cur > best) best = cur;
+        prev = d;
+      });
+      return best;
+    }
+
+    function get7DayDailyAvg() {
+      const limit = new Date();
+      limit.setHours(0, 0, 0, 0);
+      limit.setDate(limit.getDate() - 6);
+      let total = 0;
+      logs.forEach(l => { if (parseDate(l.date) >= limit) total += Number(l.pagesRead) || 0; });
+      return total / 7;
+    }
+
+    function getStatsData() {
+      const now = new Date();
+      const today = todayStr();
+
+      const dayOfWeek = now.getDay() || 7;
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - dayOfWeek + 1);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+      let todayPages = 0, weekPages = 0, monthPages = 0, yearPages = 0, totalPagesAllTime = 0;
+      const activeDays = new Set();
+
+      logs.forEach(l => {
+        const d = parseDate(l.date);
+        const p = Number(l.pagesRead) || 0;
+        totalPagesAllTime += p;
+        activeDays.add(l.date);
+        if (l.date === today) todayPages += p;
+        if (d >= startOfWeek) weekPages += p;
+        if (d >= startOfMonth) monthPages += p;
+        if (d >= startOfYear) yearPages += p;
+      });
+
+      const completedCount = books.filter(b => b.currentPage >= b.totalPages).length;
+      const readingCount = books.length - completedCount;
+      const completionRate = books.length ? Math.round((completedCount / books.length) * 100) : 0;
+      const dailyAvg = Math.round(totalPagesAllTime / (activeDays.size || 1));
+
+      const authorPages = {};
+      const authorSet = new Set();
+      books.forEach(b => {
+        const a = (b.author || '').trim();
+        if (!a) return;
+        authorSet.add(a);
+        authorPages[a] = (authorPages[a] || 0) + b.currentPage;
+      });
+
+      let topAuthor = "-", maxPages = 0;
+      Object.entries(authorPages).forEach(([a, p]) => { if (p > maxPages) { maxPages = p; topAuthor = a; } });
+
+      return {
+        todayPages, weekPages, monthPages, yearPages, totalPagesAllTime,
+        completedCount, readingCount, totalBooks: books.length, totalAuthors: authorSet.size,
+        completionRate, dailyAvg, topAuthor,
+        streak: getStreakInfo().streak, longestStreak: getLongestStreak(),
+        wishCount: wishlist.length
+      };
+    }
+
+    function renderHero() {
+      const info = getStreakInfo();
+      const s = getStatsData();
+      const card = $('hero-streak-card');
+      const status = $('hero-status');
+
+      $('hero-streak-count').innerText = info.streak;
+      $('hero-today').innerText = s.todayPages;
+      $('hero-week').innerText = s.weekPages;
+      $('hero-reading').innerText = s.readingCount;
+      $('hero-done').innerText = s.completedCount;
+
+      if (info.hasLoggedToday) {
+        card.classList.add('saved');
+        status.classList.add('on');
+        status.innerText = `Bugün ${s.todayPages} sayfa işlendi — zincir sürüyor`;
+      } else {
+        card.classList.remove('saved');
+        status.classList.remove('on');
+        status.innerText = 'Bugün henüz oturum kaydedilmedi';
+      }
+    }
+
+    /* ==================== HEATMAP ==================== */
+    const MONTHS_TR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+    function renderHeatmap() {
+      const grid = $('heatmap-container');
+      const monthsRow = $('heatmap-months');
+      if (!grid) return;
+
+      const dateMap = {};
+      logs.forEach(l => { dateMap[l.date] = (dateMap[l.date] || 0) + (Number(l.pagesRead) || 0); });
+
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const offset = (today.getDay() + 6) % 7; // Pazartesi = 0
+      const start = new Date(today);
+      start.setDate(today.getDate() - offset - 7 * 25);
+
+      const weeks = 26;
+      let cells = '';
+      let monthCells = '';
+      let lastMonth = -1;
+      const todayS = todayStr();
+
+      for (let w = 0; w < weeks; w++) {
+        const firstOfWeek = new Date(start);
+        firstOfWeek.setDate(start.getDate() + w * 7);
+        const m = firstOfWeek.getMonth();
+        monthCells += `<span style="grid-column:${w + 1}">${m !== lastMonth ? MONTHS_TR[m] : ''}</span>`;
+        lastMonth = m;
+      }
+
+      for (let w = 0; w < weeks; w++) {
+        for (let d = 0; d < 7; d++) {
+          const cur = new Date(start);
+          cur.setDate(start.getDate() + w * 7 + d);
+          const ds = toLocalDateStr(cur);
+          if (cur > today) { cells += `<div class="heatmap-cell future"></div>`; continue; }
+          const pages = dateMap[ds] || 0;
+          let level = 0;
+          if (pages > 0 && pages <= 15) level = 1;
+          else if (pages > 15 && pages <= 35) level = 2;
+          else if (pages > 35 && pages <= 70) level = 3;
+          else if (pages > 70) level = 4;
+          cells += `<div class="heatmap-cell level-${level}${ds === todayS ? ' today' : ''}" title="${ds} · ${pages} sayfa"></div>`;
+        }
+      }
+
+      // Grid akışı sütun bazlı: her sütun bir hafta, her satır bir gün
+      grid.innerHTML = cells;
+      monthsRow.innerHTML = monthCells;
+    }
+
+    /* ==================== FILTERS ==================== */
+    function setFilter(v) { activeFilter = v; render(); }
+    function setCategoryFilter(v) { activeCategoryFilter = v; render(); }
+    function setTagFilter(v) { activeTagFilter = v; render(); }
+    function setSort(v) { activeSort = v; render(); }
+    function handleSearch(v) { searchQuery = v.trim().toLowerCase(); render(); }
+
+    function filterByAuthorIdx(i) {
+      const name = authorIndex[i];
+      if (!name) return;
+      activeFilter = 'author:' + name;
+      $('filter-select').value = 'all';
+      closeModal('modal-authors');
+      render();
+    }
+
+    function clearAuthorFilter() { activeFilter = 'all'; render(); }
+
+    /* ==================== CARD INTERACTION ==================== */
+    function handlePointerDown(e, bookId) {
+      if (e.button && e.button !== 0) return;
+      if (e.target.closest('button')) return;
+      isLongPressTriggered = false;
+      pressTimer = setTimeout(() => { isLongPressTriggered = true; openViewNoteModal(bookId); }, 500);
+    }
+
+    function handlePointerUp() { clearTimeout(pressTimer); }
+    function handlePointerCancel() { clearTimeout(pressTimer); isLongPressTriggered = false; }
+
+    function handleCardClick(bookId, e) {
+      if (e.target.closest('button')) return;
+      if (isLongPressTriggered) { e.preventDefault(); e.stopPropagation(); isLongPressTriggered = false; return; }
+      openEditBookModal(bookId, e);
+    }
+
+    /* ==================== NOTE VIEW ==================== */
+    function openViewNoteModal(bookId) {
+      const book = books.find(b => b.id === String(bookId));
+      if (!book) return;
+
+      $('view-note-title').innerText = book.title;
+      $('view-note-subtitle').innerText = book.author + (book.category ? ' · ' + book.category : '');
+      $('view-note-header').innerText = book.noteHeader || 'KİTAP NOTLARI';
+
+      const body = $('view-note-body');
+      if (book.noteBody && book.noteBody.trim()) body.innerHTML = md(book.noteBody);
+      else body.innerHTML = '<p style="color:var(--text-muted);font-style:italic">Bu kitap için henüz not yok. Karta dokunup düzenleme ekranından ekleyebilirsin.</p>';
+
+      $('export-view-note-btn').onclick = () => exportNoteAsMarkdown(book.id);
+      openModal('modal-view-note');
+    }
+
+    function buildNoteFile(header, title, author, body) {
+      return `# ${header}\n\n**Kitap:** ${title}\n**Yazar:** ${author}\n\n---\n\n${body}`;
+    }
+
+    function exportNoteAsMarkdown(bookId) {
+      const book = books.find(b => b.id === String(bookId));
+      if (!book) return;
+      if (!book.noteBody || !book.noteBody.trim()) { toast('Bu kitapta indirilecek not yok.', 'warn'); return; }
+      downloadText(`${safeFileName(book.title)}_Notlari.md`,
+        buildNoteFile(book.noteHeader || book.title, book.title, book.author, book.noteBody), 'text/markdown');
+      toast('Not indirildi.', 'ok');
+    }
+
+    function exportNoteFromEditModal() {
+      const title = $('edit-title').value || 'Kitap';
+      const author = $('edit-author').value || 'Yazar';
+      const header = $('edit-note-header').value || title;
+      const body = $('edit-note-body').value || '';
+      if (!body.trim()) { toast('Henüz not metni girilmedi.', 'warn'); return; }
+      downloadText(`${safeFileName(title)}_Notlari.md`, buildNoteFile(header, title, author, body), 'text/markdown');
+      toast('Not indirildi.', 'ok');
+    }
+
+    /* ==================== WISHLIST ==================== */
+    function openWishlistModal() { renderWishlist(); openModal('modal-wishlist'); }
+    function setWishSearch(v) { wishSearch = v.trim().toLowerCase(); renderWishlist(); }
+    function setWishSort(v) { wishSort = v; renderWishlist(); }
+
+    const PRIO_LABEL = { high: 'Yüksek', mid: 'Orta', low: 'Düşük' };
+    const PRIO_RANK = { high: 0, mid: 1, low: 2 };
+
+    function renderWishlist() {
+      const c = $('wishlist-container');
+      $('wish-btn-count').innerText = wishlist.length;
+      if (!c) return;
+
+      let items = wishlist.slice();
+      if (wishSearch) {
+        items = items.filter(w =>
+          w.title.toLowerCase().includes(wishSearch) ||
+          (w.author || '').toLowerCase().includes(wishSearch) ||
+          (w.category || '').toLowerCase().includes(wishSearch)
+        );
+      }
+
+      if (wishSort === 'priority') items.sort((a, b) => PRIO_RANK[a.priority] - PRIO_RANK[b.priority]);
+      else if (wishSort === 'title') items.sort((a, b) => a.title.localeCompare(b.title, 'tr'));
+
+      if (!items.length) {
+        c.innerHTML = `<div class="empty-state" style="padding:2.5rem 1rem">
+          <strong>${wishlist.length ? 'EŞLEŞEN KAYIT YOK' : 'LİSTE BOŞ'}</strong>
+          ${wishlist.length ? 'Aramayı temizleyip tekrar dene.' : 'Yukarıdaki alandan okumak istediğin ilk kitabı ekle.'}
+        </div>`;
+        return;
+      }
+
+      c.innerHTML = items.map((w, i) => {
+        const hasNote = !!(w.noteBody && w.noteBody.trim()) || !!(w.noteHeader && w.noteHeader.trim());
+        const meta = [
+          w.author ? escapeHtml(w.author) : 'Yazar belirtilmedi',
+          w.category ? escapeHtml(w.category) : '',
+          w.pages ? w.pages + ' syf' : ''
+        ].filter(Boolean).join(' · ');
+
+        return `<div class="wish-row" role="button" tabindex="0"
+                  onclick="openWishDetail('${w.id}')"
+                  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openWishDetail('${w.id}')}">
+          <span class="wish-num">${String(i + 1).padStart(2, '0')}</span>
+          <span class="wish-body">
+            <span class="wish-title">${escapeHtml(w.title)}</span>
+            <span class="wish-meta">
+              <span>${meta}</span>
+              <span class="prio ${w.priority}">${PRIO_LABEL[w.priority]}</span>
+              ${hasNote ? '<span class="note-badge">NOT</span>' : ''}
+            </span>
+          </span>
+          <span class="wish-arrow">›</span>
+        </div>`;
+      }).join('');
+    }
+
+    wishForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const title = $('wish-new-title').value.trim();
+      if (!title) return;
+      wishlist.push({
+        id: String(Date.now()),
+        title,
+        author: $('wish-new-author').value.trim(),
+        category: '',
+        pages: 0,
+        priority: 'mid',
+        reason: '',
+        noteHeader: '',
+        noteBody: '',
+        addedAt: todayStr()
+      });
+      persist();
+      wishForm.reset();
+      renderWishlist();
+      $('wish-btn-count').innerText = wishlist.length;
+      toast('Listeye eklendi.', 'ok');
+    });
+
+    function openWishDetail(id) {
+      const w = wishlist.find(x => x.id === String(id));
+      if (!w) return;
+      currentWishId = w.id;
+
+      $('wish-d-heading').innerText = w.title;
+      $('wish-d-added').innerText = 'Listeye eklendi: ' + w.addedAt;
+      $('wish-d-title').value = w.title;
+      $('wish-d-author').value = w.author || '';
+      $('wish-d-pages').value = w.pages || '';
+      $('wish-d-category').value = w.category || '';
+      $('wish-d-priority').value = w.priority;
+      $('wish-d-reason').value = w.reason || '';
+      $('wish-d-note-header').value = w.noteHeader || '';
+      $('wish-d-note-body').value = w.noteBody || '';
+
+      setWishNoteTab('write');
+      openModal('modal-wish-detail');
+    }
+
+    function setWishNoteTab(tab) {
+      wishNoteTab = tab;
+      const write = tab === 'write';
+      $('wish-tab-write').classList.toggle('active', write);
+      $('wish-tab-preview').classList.toggle('active', !write);
+      $('wish-d-note-body').style.display = write ? 'block' : 'none';
+      $('wish-d-preview').style.display = write ? 'none' : 'block';
+      if (!write) renderWishPreview();
+    }
+
+    function renderWishPreview() {
+      const header = $('wish-d-note-header').value.trim();
+      const body = $('wish-d-note-body').value;
+      $('wish-d-preview').innerHTML =
+        `<div class="note-header-text">${escapeHtml(header || 'NOTLAR')}</div>
+         <div class="note-body-text">${body.trim() ? md(body) : '<p style="color:var(--text-muted);font-style:italic">Henüz not yazılmadı.</p>'}</div>`;
+    }
+
+    wishDetailForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const w = wishlist.find(x => x.id === currentWishId);
+      if (!w) return;
+      w.title = $('wish-d-title').value.trim() || w.title;
+      w.author = $('wish-d-author').value.trim();
+      w.pages = parseInt($('wish-d-pages').value) || 0;
+      w.category = $('wish-d-category').value.trim();
+      w.priority = $('wish-d-priority').value;
+      w.reason = $('wish-d-reason').value.trim();
+      w.noteHeader = $('wish-d-note-header').value.trim();
+      w.noteBody = $('wish-d-note-body').value;
+      persist();
+      renderWishlist();
+      $('wish-d-heading').innerText = w.title;
+      toast('Kaydedildi.', 'ok');
+      closeModal('modal-wish-detail');
+    });
+
+    function deleteWish() {
+      const w = wishlist.find(x => x.id === currentWishId);
+      if (!w) return;
+      if (!confirm(`"${w.title}" listeden silinsin mi?`)) return;
+      wishlist = wishlist.filter(x => x.id !== currentWishId);
+      persist();
+      closeModal('modal-wish-detail');
+      renderWishlist();
+      $('wish-btn-count').innerText = wishlist.length;
+      toast('Listeden silindi.');
+    }
+
+    function exportWishNote() {
+      const title = $('wish-d-title').value || 'Kitap';
+      const author = $('wish-d-author').value || 'Bilinmiyor';
+      const header = $('wish-d-note-header').value || title;
+      const reason = $('wish-d-reason').value.trim();
+      const body = $('wish-d-note-body').value || '';
+      if (!body.trim() && !reason) { toast('İndirilecek not yok.', 'warn'); return; }
+      const content = `# ${header}\n\n**Kitap:** ${title}\n**Yazar:** ${author}\n**Durum:** Okuma listesinde\n${reason ? `**Neden:** ${reason}\n` : ''}\n---\n\n${body}`;
+      downloadText(`${safeFileName(title)}_Notlari.md`, content, 'text/markdown');
+      toast('Not indirildi.', 'ok');
+    }
+
+    function moveWishToLibrary() {
+      const w = wishlist.find(x => x.id === currentWishId);
+      if (!w) return;
+      const pages = parseInt($('wish-d-pages').value) || 0;
+      if (pages < 1) { toast('Kütüphaneye taşımak için tahmini sayfa sayısı gir.', 'warn'); $('wish-d-pages').focus(); return; }
+
+      const title = $('wish-d-title').value.trim() || w.title;
+      books.push({
+        id: String(Date.now()),
+        title,
+        author: $('wish-d-author').value.trim() || 'Bilinmiyor',
+        category: $('wish-d-category').value.trim(),
+        tags: [],
+        totalPages: pages,
+        currentPage: 0,
+        coverUrl: '',
+        borderStyle: 'normal',
+        borderColor: '#ff3333',
+        noteHeader: $('wish-d-note-header').value.trim(),
+        noteBody: $('wish-d-note-body').value,
+        showEta: false,
+        isSpecial: false,
+        hasFile: false
+      });
+
+      wishlist = wishlist.filter(x => x.id !== currentWishId);
+      persist();
+      closeModal('modal-wish-detail');
+      renderWishlist();
+      render();
+      toast(`"${title}" kütüphaneye taşındı.`, 'ok');
+    }
+
+    /* ==================== LOG HISTORY ==================== */
+    function openDailyLogsModal() {
+      const container = $('daily-logs-container');
+      const recent = logs.slice().reverse().slice(0, 10);
+
+      if (!recent.length) {
+        container.innerHTML = `<div class="empty-state" style="padding:2.2rem 1rem"><strong>KAYIT YOK</strong>İlk oturumunu ekle, geçmiş burada birikmeye başlasın.</div>`;
+      } else {
+        container.innerHTML = recent.map(log => {
+          const book = books.find(b => b.id === String(log.bookId));
+          return `<div class="log-row">
+            <div>
+              <div style="font-weight:600;color:#fff;font-size:0.92rem">${escapeHtml(book ? book.title : 'Silinmiş kitap')}</div>
+              <div style="font-size:0.74rem;color:var(--text-muted);margin-top:0.2rem;font-family:var(--mono)">${escapeHtml(book ? book.author : '—')} · ${escapeHtml(log.date)}</div>
+            </div>
+            <div class="log-pages">+${Number(log.pagesRead) || 0} syf</div>
+          </div>`;
+        }).join('');
+      }
+      openModal('modal-daily-logs');
+    }
+
+    /* ==================== SHARE CARD ==================== */
+    function openStreakCardModal() { updateCardPreview(); openModal('modal-streak-card'); }
+
+    function updateCardPreview() {
+      const stats = getStatsData();
+      const card = $('shareable-card');
+
+      $('preview-streak-val').innerText = `${stats.streak} GÜN`;
+
+      const style = $('card-border-style').value;
+      const color = $('card-border-color').value;
+      const bgUrl = $('card-bg-url').value.trim();
+      const note = $('card-custom-note').value.trim();
+
+      card.className = `share-card-container border-${style}`;
+      card.style.setProperty('--card-border-color', color);
+      card.style.setProperty('--card-border-glow', color + '80');
+
+      if (bgUrl) {
+        card.style.backgroundImage = `linear-gradient(rgba(8,8,12,0.68), rgba(8,8,12,0.88)), url('${bgUrl}')`;
+        card.style.backgroundSize = 'cover';
+        card.style.backgroundPosition = 'center';
+      } else {
+        card.style.backgroundImage = 'none';
+        card.style.backgroundColor = '#121218';
+      }
+
+      let html = '';
+      const row = (k, v) => `<div class="share-card-stat-row"><span class="share-card-stat-label">${k}</span><span>${v}</span></div>`;
+      if ($('card-inc-today').checked) html += row('Bugün okunan', stats.todayPages + ' sayfa');
+      if ($('card-inc-total').checked) html += row('Kütüphane', `${stats.completedCount} biten / ${stats.totalBooks} toplam`);
+      if ($('card-inc-alltime').checked) html += row('Tüm zamanlar', stats.totalPagesAllTime + ' sayfa');
+      if ($('card-inc-topauthor').checked && stats.topAuthor !== '-') html += row('En çok okunan yazar', escapeHtml(stats.topAuthor));
+
+      $('preview-stats-container').innerHTML = html;
+      $('preview-custom-note').innerText = note ? `"${note}"` : '';
+    }
+
+    function downloadStreakCardPNG() {
+      const el = $('shareable-card');
+      html2canvas(el, { backgroundColor: null, scale: 2, useCORS: true, logging: false })
+        .then(canvas => {
+          const link = document.createElement('a');
+          link.download = `Stanczyk_ZinciriKirma_${todayStr()}.png`;
+          link.href = canvas.toDataURL('image/png');
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          toast('Kart indirildi.', 'ok');
+        })
+        .catch(err => toast('Kart oluşturulamadı: ' + err.message, 'err'));
+    }
+
+    /* ==================== STATS MODAL & PDF ==================== */
+    function openStatsModal() {
+      const s = getStatsData();
+      $('stat-today-pages').innerText = s.todayPages + ' syf';
+      $('stat-total-books').innerText = s.totalBooks;
+      $('stat-completed-books').innerText = s.completedCount;
+      $('stat-total-authors').innerText = s.totalAuthors;
+      $('stat-streak').innerText = s.streak + ' gün';
+      $('stat-longest-streak').innerText = s.longestStreak + ' gün';
+      $('stat-week-pages').innerText = s.weekPages + ' syf';
+      $('stat-month-pages').innerText = s.monthPages + ' syf';
+      $('stat-year-pages').innerText = s.yearPages + ' syf';
+      $('stat-alltime-pages').innerText = s.totalPagesAllTime + ' syf';
+      $('stat-daily-avg').innerText = s.dailyAvg + ' syf';
+      $('stat-completion-rate').innerText = '%' + s.completionRate;
+      $('stat-wishlist').innerText = s.wishCount;
+      $('stat-top-author').innerText = s.topAuthor !== '-' ? s.topAuthor : 'Henüz veri yok';
+      openModal('modal-stats');
+    }
+
+    function exportStatsPDF() {
+      const s = getStatsData();
+      const box = document.createElement('div');
+      box.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px;padding:34px;background:#0a0a0e;color:#fff;font-family:Inter,sans-serif';
+
+      const row = (k, v, color) => `<tr style="border-bottom:1px solid #1e1e26">
+        <td style="padding:11px 0;color:#a0a0ac;font-size:13px">${k}</td>
+        <td style="padding:11px 0;text-align:right;font-weight:700;font-size:13px;color:${color || '#fff'}">${v}</td></tr>`;
+
+      box.innerHTML = `
+        <div style="border-bottom:3px solid #ff3333;padding-bottom:16px;margin-bottom:26px;display:flex;justify-content:space-between;align-items:flex-end">
+          <div>
+            <h1 style="color:#ff3333;font-size:24px;margin:0;letter-spacing:2px">STAŃCZYK SPECTRUM</h1>
+            <p style="color:#8a8a96;font-size:11px;margin-top:6px;letter-spacing:2px">DİJİTAL OKUMA ANALİZ RAPORU</p>
+          </div>
+          <div style="text-align:right;font-size:11px;color:#8a8a96">${new Date().toLocaleDateString('tr-TR')}</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:26px">
+          ${row('Güncel seri', s.streak + ' gün kesintisiz', '#ffcc00')}
+          ${row('En uzun seri', s.longestStreak + ' gün', '#ffcc00')}
+          ${row('Bugün okunan', s.todayPages + ' sayfa', '#00ff88')}
+          ${row('Bu hafta', s.weekPages + ' sayfa', '#ff3333')}
+          ${row('Bu ay', s.monthPages + ' sayfa', '#ff3333')}
+          ${row('Bu yıl', s.yearPages + ' sayfa', '#ff3333')}
+          ${row('Tüm zamanlar', s.totalPagesAllTime + ' sayfa', '#ff3333')}
+          ${row('Aktif gün ortalaması', s.dailyAvg + ' sayfa/gün')}
+          ${row('Tamamlama oranı', `%${s.completionRate} (${s.completedCount}/${s.totalBooks})`)}
+          ${row('Toplam yazar', s.totalAuthors)}
+          ${row('Okuma listesi (İstediklerim)', s.wishCount + ' kitap')}
+          ${row('En çok okunan yazar', escapeHtml(s.topAuthor), '#ffcc00')}
+        </table>
+        <div style="border-top:1px solid #1e1e26;padding-top:14px;font-size:10px;color:#55555f;text-align:center;letter-spacing:1px">
+          Stańczyk Spectrum tarafından otomatik üretildi.
+        </div>`;
+
+      document.body.appendChild(box);
+
+      html2pdf().set({
+        margin: 10,
+        filename: `Stanczyk_Spectrum_Rapor_${todayStr()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, backgroundColor: '#0a0a0e' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(box).save().then(() => {
+        box.remove();
+        toast('Rapor indirildi.', 'ok');
+      }).catch(err => {
+        box.remove();
+        toast('Rapor oluşturulamadı: ' + err.message, 'err');
+      });
+    }
+
+    /* ==================== BACKUP ==================== */
+    function arrayBufferToBase64(buffer) {
+      if (!buffer) return '';
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const chunk = 8192;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunk, bytes.length)));
+      }
+      return btoa(binary);
+    }
+
+    function base64ToArrayBuffer(base64) {
+      if (!base64) return new ArrayBuffer(0);
+      let clean = base64.includes(',') ? base64.split(',')[1] : base64;
+      clean = clean.replace(/\s/g, '');
+      const bin = atob(clean);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return bytes.buffer;
+    }
+
+    function openBackupModal() {
+      $('backup-out').value = '';
+      $('backup-out-wrap').style.display = 'none';
+      $('backup-in').value = '';
+      openModal('modal-backup');
+    }
+
+    async function readStoredFiles() {
+      const db = await getDB();
+      const raw = await new Promise((resolve, reject) => {
+        const tx = db.transaction(["pdfFiles"], "readonly");
+        const req = tx.objectStore("pdfFiles").getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = e => reject(e.target.error);
+      });
+      return raw.map(it => ({
+        bookId: String(it.bookId),
+        fileName: it.fileName || 'file',
+        fileType: it.fileType || 'application/pdf',
+        fileDataBase64: arrayBufferToBase64(it.fileData)
+      }));
+    }
+
+    async function buildBackup(includeFiles) {
+      let files = [];
+      if (includeFiles) {
+        try {
+          files = await readStoredFiles();
+        } catch (err) {
+          console.warn('Dosyalar okunamadı:', err);
+          toast('E-kitap dosyaları okunamadı; metin verileri yedeklendi.', 'warn');
+        }
+      }
+      return { version: '9.1', exportDate: new Date().toISOString(), books, logs, wishlist, pdfFiles: files };
+    }
+
+    async function exportAllData() {
+      try {
+        const backup = await buildBackup(true);
+        downloadText(`Stanczyk_Spectrum_Yedek_${todayStr()}.json`, JSON.stringify(backup), 'application/json');
+        toast('Yedek dosyası oluşturuldu.', 'ok');
+      } catch (err) {
+        toast('Yedekleme hatası: ' + err.message, 'err');
+      }
+    }
+
+    async function generateBackupText() {
+      try {
+        const backup = await buildBackup(false);
+        const text = JSON.stringify(backup);
+        $('backup-out-wrap').style.display = 'block';
+        $('backup-out').value = text;
+        const copied = await copyBackupText(text);
+        toast(copied ? 'Yedek metni panoya kopyalandı.' : 'Metin hazır — aşağıdan elle kopyalayabilirsin.', copied ? 'ok' : 'warn');
+      } catch (err) {
+        toast('Yedek metni oluşturulamadı: ' + err.message, 'err');
+      }
+    }
+
+    async function copyBackupText(text) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (err) { /* güvenli olmayan bağlamda kopyalama engellenir */ }
+      try {
+        const ta = $('backup-out');
+        ta.removeAttribute('readonly');
+        ta.focus();
+        ta.setSelectionRange(0, ta.value.length);
+        const ok = document.execCommand('copy');
+        ta.setAttribute('readonly', 'readonly');
+        return ok;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    async function applyBackup(data) {
+      if (!data || (!data.books && !Array.isArray(data))) {
+        toast('Bu bir Stańczyk yedeği değil.', 'err');
+        return;
+      }
+      if (!confirm('Mevcut veriler yedekle değiştirilecek. Devam edilsin mi?')) return;
+
+      books = (data.books || (Array.isArray(data) ? data : [])).map(b => ({
+        id: String(b.id), title: b.title || 'İsimsiz', author: b.author || 'Bilinmiyor',
+        category: b.category || '', tags: Array.isArray(b.tags) ? b.tags : [],
+        totalPages: Number(b.totalPages) || 1, currentPage: Number(b.currentPage) || 0,
+        coverUrl: b.coverUrl || '', borderStyle: b.borderStyle || 'normal', borderColor: b.borderColor || '#ff3333',
+        noteHeader: b.noteHeader || '', noteBody: b.noteBody || '',
+        showEta: !!b.showEta, isSpecial: !!b.isSpecial, hasFile: !!b.hasFile
+      }));
+
+      logs = Array.isArray(data.logs) ? data.logs : [];
+
+      wishlist = (data.wishlist || []).map(w => ({
+        id: String(w.id || Date.now() + Math.random()),
+        title: w.title || 'İsimsiz', author: w.author || '', category: w.category || '',
+        pages: Number(w.pages) || 0, priority: ['high', 'mid', 'low'].includes(w.priority) ? w.priority : 'mid',
+        reason: w.reason || '', noteHeader: w.noteHeader || '', noteBody: w.noteBody || '',
+        addedAt: w.addedAt || todayStr()
+      }));
+
+      persist();
+
+      if (data.pdfFiles && data.pdfFiles.length) {
+        try {
+          const db = await getDB();
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction(["pdfFiles"], "readwrite");
+            const store = tx.objectStore("pdfFiles");
+            store.clear();
+            data.pdfFiles.forEach(p => {
+              if (p && p.fileDataBase64) {
+                store.put({
+                  bookId: String(p.bookId),
+                  fileName: p.fileName || 'file',
+                  fileType: p.fileType || 'application/pdf',
+                  fileData: base64ToArrayBuffer(p.fileDataBase64)
+                });
+              }
+            });
+            tx.oncomplete = resolve;
+            tx.onerror = err => reject(err.target.error);
+          });
+        } catch (fileErr) {
+          console.warn('Dosya aktarım hatası:', fileErr);
+          toast('E-kitap dosyaları aktarılamadı; diğer veriler yüklendi.', 'warn');
+        }
+      }
+
+      render();
+      renderWishlist();
+      closeModal('modal-backup');
+      toast(`Geri yüklendi: ${books.length} kitap, ${wishlist.length} istek.`, 'ok');
+    }
+
+    function restoreFromText() {
+      const raw = $('backup-in').value.trim();
+      if (!raw) { toast('Önce yedek metnini yapıştır.', 'warn'); return; }
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch (err) {
+        toast('Metin okunamadı — yedeğin tamamını yapıştırdığından emin ol.', 'err');
+        return;
+      }
+      applyBackup(data);
+    }
+
+    function importAllData(event) {
+      const input = event.target;
+      const file = input.files && input.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onerror = () => { toast('Dosya okunamadı.', 'err'); input.value = ''; };
+      reader.onload = async e => {
+        try {
+          await applyBackup(JSON.parse(e.target.result));
+        } catch (err) {
+          toast('Yedek yükleme hatası: ' + err.message, 'err');
+        } finally {
+          input.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* ==================== FILE STORAGE ==================== */
+    async function saveEbookFile(bookId, file) {
+      const db = await getDB();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Dosya okunamadı'));
+        reader.onload = ev => {
+          try {
+            const tx = db.transaction(["pdfFiles"], "readwrite");
+            tx.onerror = err => reject(new Error('Veritabanı hatası: ' + err.target.error));
+            tx.objectStore("pdfFiles").put({
+              bookId: String(bookId),
+              fileName: file.name,
+              fileData: ev.target.result,
+              fileType: file.type || (file.name.toLowerCase().endsWith('.epub') ? 'application/epub+zip' : 'application/pdf')
+            });
+            tx.oncomplete = () => resolve();
+          } catch (err) { reject(err); }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function deleteEbookFileFromDB(bookId) {
+      try {
+        const db = await getDB();
+        const tx = db.transaction(["pdfFiles"], "readwrite");
+        tx.objectStore("pdfFiles").delete(String(bookId));
+      } catch (err) { console.error(err); }
+    }
+
+    /* ==================== BOOK FORMS ==================== */
+    bookForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = $('add-submit-btn');
+      const original = btn.innerText;
+      try {
+        btn.innerText = 'KAYDEDİLİYOR...';
+        btn.disabled = true;
+
+        const tagsInput = $('book-tags').value;
+        const id = String(Date.now());
+        const fileInput = $('book-file');
+        const hasFile = !!(fileInput.files && fileInput.files.length);
+
+        if (hasFile) await saveEbookFile(id, fileInput.files[0]);
+
+        books.push({
+          id,
+          title: $('book-title').value.trim(),
+          author: $('book-author').value.trim(),
+          category: $('book-category').value.trim(),
+          tags: tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : [],
+          totalPages: Math.max(1, parseInt($('book-total-pages').value) || 1),
+          currentPage: 0,
+          coverUrl: $('book-cover-url').value.trim(),
+          borderStyle: 'normal',
+          borderColor: '#ff3333',
+          noteHeader: '',
+          noteBody: '',
+          showEta: $('book-show-eta').checked,
+          isSpecial: $('book-is-special').checked,
+          hasFile
+        });
+
+        saveAndRender();
+        bookForm.reset();
+        closeModal('modal-add-book');
+        toast('Kitap eklendi.', 'ok');
+      } catch (err) {
+        toast('Kitap eklenemedi: ' + err.message, 'err');
+      } finally {
+        btn.innerText = original;
+        btn.disabled = false;
+      }
+    });
+
+    logForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const bookId = String(logBookSelect.value || '');
+      if (!bookId) { toast('Önce listeden bir kitap seç.', 'warn'); return; }
+      const pages = parseInt($('log-pages').value);
+      if (!pages || pages < 1) { toast('Geçerli bir sayfa sayısı gir.', 'warn'); return; }
+
+      const book = books.find(b => b.id === bookId);
+      if (!book) { toast('Kitap bulunamadı.', 'err'); return; }
+
+      book.currentPage = Math.min(book.totalPages, book.currentPage + pages);
+      logs.push({ bookId, pagesRead: pages, date: todayStr() });
+      saveAndRender();
+      logForm.reset();
+      closeModal('modal-add-log');
+      toast(`${pages} sayfa kaydedildi — zincir sürüyor.`, 'ok');
+    });
+
+    function filterLogBooks(term) {
+      const q = (term || '').toLowerCase().trim();
+      const unfinished = books.filter(b => b.currentPage < b.totalPages);
+      const filtered = unfinished.filter(b =>
+        b.title.toLowerCase().includes(q) ||
+        b.author.toLowerCase().includes(q) ||
+        (b.category && b.category.toLowerCase().includes(q))
+      );
+
+      if (!filtered.length) {
+        logBookSelect.innerHTML = `<option value="">${unfinished.length ? 'Eşleşen kitap yok' : 'Devam eden kitabın yok'}</option>`;
+      } else {
+        logBookSelect.innerHTML = filtered.map((b, i) =>
+          `<option value="${b.id}" ${i === 0 ? 'selected' : ''}>${escapeHtml(b.title)} — ${escapeHtml(b.author)}${b.category ? ' [' + escapeHtml(b.category) + ']' : ''} (${b.currentPage}/${b.totalPages})</option>`
+        ).join('');
+      }
+    }
+
+    function openEditBookModal(id, e) {
+      if (e) e.stopPropagation();
+      const book = books.find(b => b.id === String(id));
+      if (!book) return;
+
+      $('edit-file').value = '';
+      $('edit-book-id').value = book.id;
+      $('edit-title').value = book.title;
+      $('edit-author').value = book.author;
+      $('edit-category').value = book.category;
+      $('edit-tags').value = book.tags.join(', ');
+      $('edit-total-pages').value = book.totalPages;
+      $('edit-current-page').value = book.currentPage;
+      $('edit-cover-url').value = book.coverUrl;
+      $('edit-border-style').value = book.borderStyle;
+      $('edit-border-color').value = book.borderColor;
+      $('edit-note-header').value = book.noteHeader;
+      $('edit-note-body').value = book.noteBody;
+      $('edit-show-eta').checked = book.showEta;
+      $('edit-is-special').checked = book.isSpecial;
+
+      $('file-status-container').innerHTML = book.hasFile
+        ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;font-size:0.8rem;padding:0.55rem 0.8rem;border-radius:6px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.45);color:var(--neon-green)">
+             <span>E-kitap yüklü</span>
+             <button type="button" class="action-btn" style="border-color:rgba(255,71,87,0.5);color:#ff8b95" onclick="removeBookFile('${book.id}')">DOSYAYI SİL</button>
+           </div>`
+        : `<div style="font-size:0.8rem;padding:0.55rem 0.8rem;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid var(--line);color:var(--text-muted)">Dosya yüklü değil</div>`;
+
+      openModal('modal-edit-book');
+    }
+
+    async function removeBookFile(id) {
+      const book = books.find(b => b.id === String(id));
+      if (!book) return;
+      if (!confirm('Yüklü e-kitap dosyası silinsin mi?')) return;
+      await deleteEbookFileFromDB(book.id);
+      book.hasFile = false;
+      saveAndRender();
+      openEditBookModal(book.id);
+      toast('Dosya silindi.');
+    }
+
+    editForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = $('edit-submit-btn');
+      const original = btn.innerText;
+      try {
+        btn.innerText = 'KAYDEDİLİYOR...';
+        btn.disabled = true;
+
+        const book = books.find(b => b.id === String($('edit-book-id').value));
+        if (!book) return;
+
+        const total = Math.max(1, parseInt($('edit-total-pages').value) || 1);
+        const current = Math.max(0, Math.min(total, parseInt($('edit-current-page').value) || 0));
+        const tagsInput = $('edit-tags').value;
+
+        book.title = $('edit-title').value.trim();
+        book.author = $('edit-author').value.trim();
+        book.category = $('edit-category').value.trim();
+        book.tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : [];
+        book.totalPages = total;
+        book.currentPage = current;
+        book.coverUrl = $('edit-cover-url').value.trim();
+        book.borderStyle = $('edit-border-style').value;
+        book.borderColor = $('edit-border-color').value;
+        book.noteHeader = $('edit-note-header').value;
+        book.noteBody = $('edit-note-body').value;
+        book.showEta = $('edit-show-eta').checked;
+        book.isSpecial = $('edit-is-special').checked;
+
+        const fileInput = $('edit-file');
+        if (fileInput.files && fileInput.files.length) {
+          await saveEbookFile(book.id, fileInput.files[0]);
+          book.hasFile = true;
+        }
+        fileInput.value = '';
+
+        saveAndRender();
+        closeModal('modal-edit-book');
+        toast('Değişiklikler kaydedildi.', 'ok');
+      } catch (err) {
+        toast('Güncelleme hatası: ' + err.message, 'err');
+      } finally {
+        btn.innerText = original;
+        btn.disabled = false;
+      }
+    });
+
+    function finishBook(id, e) {
+      if (e) e.stopPropagation();
+      const book = books.find(b => b.id === String(id));
+      if (!book) return;
+      book.currentPage = book.totalPages;
+      saveAndRender();
+      toast(`"${book.title}" bitti sayıldı.`, 'ok');
+    }
+
+    async function deleteBook(id, e) {
+      if (e) e.stopPropagation();
+      const book = books.find(b => b.id === String(id));
+      if (!book) return;
+      if (!confirm(`"${book.title}" silinsin mi? Bu kitabın oturum kayıtları da kaldırılır.`)) return;
+      books = books.filter(b => b.id !== book.id);
+      logs = logs.filter(l => String(l.bookId) !== book.id);
+      await deleteEbookFileFromDB(book.id);
+      saveAndRender();
+      toast('Kitap silindi.');
+    }
+
+    /* ==================== READER ==================== */
+    async function openReader(bookId, event) {
+      if (event) event.stopPropagation();
+      const book = books.find(b => b.id === String(bookId));
+      if (!book) return;
+
+      try {
+        const db = await getDB();
+        const req = db.transaction(["pdfFiles"], "readonly").objectStore("pdfFiles").get(book.id);
+
+        req.onsuccess = () => {
+          if (!req.result || !req.result.fileData) { toast('Bu kitap için dosya bulunamadı.', 'warn'); return; }
+
+          resetReader();
+          const { fileData, fileName = '', fileType = '' } = req.result;
+          const isEpub = fileType.includes('epub') || fileName.toLowerCase().endsWith('.epub');
+
+          readerTitle.innerText = book.title;
+
+          if (isEpub) {
+            epubNavControls.style.display = 'flex';
+            openNewTabBtn.style.display = 'none';
+
+            currentEpubBook = ePub(fileData);
+            currentEpubRendition = currentEpubBook.renderTo("reader-container", { width: "100%", height: "100%", spread: "auto" });
+            currentEpubRendition.themes.default({
+              'body': { 'color': '#e2e2e8 !important', 'background': '#101014 !important', 'font-family': 'Inter, sans-serif !important', 'padding': '1rem !important' },
+              'p': { 'color': '#e2e2e8 !important', 'line-height': '1.7 !important' },
+              'h1, h2, h3': { 'color': '#ff3333 !important' },
+              'a': { 'color': '#ffcc00 !important' }
+            });
+            currentEpubRendition.display();
+          } else {
+            epubNavControls.style.display = 'none';
+            openNewTabBtn.style.display = 'inline-block';
+
+            const blob = new Blob([fileData], { type: fileType || 'application/pdf' });
+            if (activePdfBlobUrl) URL.revokeObjectURL(activePdfBlobUrl);
+            activePdfBlobUrl = URL.createObjectURL(blob);
+            readerContainer.innerHTML = `<embed src="${activePdfBlobUrl}" type="application/pdf" width="100%" height="100%">`;
+          }
+
+          openModal('reader-overlay');
+        };
+        req.onerror = () => toast('Dosya okunamadı.', 'err');
+      } catch (err) {
+        toast('Dosya okuma hatası: ' + err.message, 'err');
+      }
+    }
+
+    function prevEpubPage() { if (currentEpubRendition) currentEpubRendition.prev(); }
+    function nextEpubPage() { if (currentEpubRendition) currentEpubRendition.next(); }
+    function openPdfInNewTab() { if (activePdfBlobUrl) window.open(activePdfBlobUrl, '_blank'); }
+
+    function resetReader() {
+      readerContainer.innerHTML = '';
+      if (currentEpubBook) {
+        try { currentEpubBook.destroy(); } catch (e) {}
+        currentEpubBook = null;
+        currentEpubRendition = null;
+      }
+    }
+
+    function closeReader() {
+      resetReader();
+      closeModal('reader-overlay');
+    }
+
+    /* ==================== MAIN RENDER ==================== */
+    function render() {
+      renderHero();
+      renderHeatmap();
+      $('wish-btn-count').innerText = wishlist.length;
+
+      const authorCounts = {};
+      const categories = new Set();
+      const tags = new Set();
+
+      books.forEach(b => {
+        const name = (b.author || '').trim();
+        if (name) authorCounts[name] = (authorCounts[name] || 0) + 1;
+        if (b.category) categories.add(b.category);
+        b.tags.forEach(t => tags.add(t));
+      });
+
+      $('category-filter-select').innerHTML = '<option value="all">Tüm kategoriler</option>' +
+        Array.from(categories).sort((a, b) => a.localeCompare(b, 'tr'))
+          .map(c => `<option value="${escapeHtml(c)}" ${activeCategoryFilter === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+
+      $('tag-filter-select').innerHTML = '<option value="all">Tüm türler</option>' +
+        Array.from(tags).sort((a, b) => a.localeCompare(b, 'tr'))
+          .map(t => `<option value="${escapeHtml(t)}" ${activeTagFilter === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
+
+      const entries = Object.entries(authorCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'tr'));
+      authorIndex = entries.map(e => e[0]);
+
+      authorListContainer.innerHTML = entries.length
+        ? entries.map(([name, count], i) =>
+            `<div class="author-item" role="button" tabindex="0" onclick="filterByAuthorIdx(${i})"
+                  onkeydown="if(event.key==='Enter'){filterByAuthorIdx(${i})}">
+               <span>${escapeHtml(name)}</span><span class="author-count">${count} kitap</span>
+             </div>`).join('')
+        : `<div class="empty-state" style="padding:2rem 1rem"><strong>YAZAR YOK</strong>Kütüphaneye kitap ekledikçe yazarlar burada listelenir.</div>`;
+
+      const afc = $('active-filter-container');
+      if (activeFilter.startsWith('author:')) {
+        const name = activeFilter.slice(7);
+        afc.innerHTML = `<div class="active-filter-badge"><span>YAZAR: ${escapeHtml(name)}</span><button onclick="clearAuthorFilter()" title="Filtreyi kaldır">✕</button></div>`;
+      } else {
+        afc.innerHTML = '';
+      }
+
+      let list = books.slice();
+
+      if (searchQuery) {
+        list = list.filter(b =>
+          b.title.toLowerCase().includes(searchQuery) ||
+          b.author.toLowerCase().includes(searchQuery) ||
+          (b.category && b.category.toLowerCase().includes(searchQuery)) ||
+          b.tags.some(t => t.toLowerCase().includes(searchQuery))
+        );
+      }
+
+      if (activeCategoryFilter !== 'all') list = list.filter(b => b.category === activeCategoryFilter);
+      if (activeTagFilter !== 'all') list = list.filter(b => b.tags.includes(activeTagFilter));
+
+      if (activeFilter.startsWith('author:')) {
+        const name = activeFilter.slice(7);
+        list = list.filter(b => b.author.trim() === name);
+      } else if (activeFilter === 'reading') list = list.filter(b => b.currentPage < b.totalPages);
+      else if (activeFilter === 'completed') list = list.filter(b => b.currentPage >= b.totalPages);
+      else if (activeFilter === 'hasFile') list = list.filter(b => b.hasFile);
+      else if (activeFilter === 'special') list = list.filter(b => b.isSpecial);
+
+      const pct = b => b.totalPages > 0 ? b.currentPage / b.totalPages : 0;
+      if (activeSort === 'title-asc') list.sort((a, b) => a.title.localeCompare(b.title, 'tr'));
+      else if (activeSort === 'title-desc') list.sort((a, b) => b.title.localeCompare(a.title, 'tr'));
+      else if (activeSort === 'progress-desc') list.sort((a, b) => pct(b) - pct(a));
+      else if (activeSort === 'progress-asc') list.sort((a, b) => pct(a) - pct(b));
+      else if (activeSort === 'pages-desc') list.sort((a, b) => b.totalPages - a.totalPages);
+      else if (activeSort === 'pages-asc') list.sort((a, b) => a.totalPages - b.totalPages);
+
+      $('list-meta').innerText = books.length
+        ? `${list.length} / ${books.length} kitap gösteriliyor`
+        : '';
+
+      if (!list.length) {
+        bookListContainer.innerHTML = books.length
+          ? `<div class="empty-state"><strong>EŞLEŞEN KİTAP YOK</strong>Filtreleri gevşet ya da aramayı temizle.</div>`
+          : `<div class="empty-state"><strong>KÜTÜPHANE BOŞ</strong>“+ Kitap ekle” ile başla; okumak istediklerini “İstediklerim” listesinde tut.</div>`;
+        return;
+      }
+
+      const avg7 = get7DayDailyAvg();
+
+      bookListContainer.innerHTML = list.map(book => {
+        const percent = book.totalPages > 0 ? Math.min(100, Math.round((book.currentPage / book.totalPages) * 100)) : 0;
+        const bg = book.coverUrl
+          ? `background-image:linear-gradient(rgba(8,8,12,0.5),rgba(8,8,12,0.82)),url('${escapeHtml(book.coverUrl)}');background-size:cover;background-position:center;`
+          : '';
+        const vars = `--card-border-color:${escapeHtml(book.borderColor)};--card-border-glow:${escapeHtml(book.borderColor)}80;`;
+        const hasNote = !!(book.noteHeader || book.noteBody);
+
+        let eta = '';
+        if (book.showEta && book.currentPage < book.totalPages) {
+          const remaining = book.totalPages - book.currentPage;
+          eta = avg7 > 0
+            ? `Tahmini bitiş: ~${Math.ceil(remaining / avg7)} gün (son 7 gün hızıyla)`
+            : 'Tahmini bitiş: hız verisi bekleniyor';
+        }
+
+        return `
+          <div class="book-card border-${escapeHtml(book.borderStyle)}" style="${bg}${vars}"
+               oncontextmenu="return false"
+               onpointerdown="handlePointerDown(event,'${book.id}')"
+               onpointerup="handlePointerUp()"
+               onpointercancel="handlePointerCancel()"
+               onclick="handleCardClick('${book.id}',event)">
+            <div class="book-header">
+              <div style="flex:1;min-width:0">
+                <div class="book-title">${escapeHtml(book.title)}</div>
+                <div class="book-author">${escapeHtml(book.author)}</div>
+              </div>
+              <div class="card-badges">
+                ${book.category ? `<span class="category-badge">${escapeHtml(book.category)}</span>` : ''}
+                ${hasNote ? `<span class="note-badge" title="Notu görmek için basılı tut">NOT</span>` : ''}
+              </div>
+              <button class="icon-x" title="Kitabı sil" onclick="deleteBook('${book.id}',event)">✕</button>
+            </div>
+
+            ${book.tags.length ? `<div class="tag-container">${book.tags.map(t => `<span class="tag-pill">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+
+            <div class="progress-line">
+              <span>%${percent}</span>
+              <span>${book.currentPage} / ${book.totalPages} syf</span>
+            </div>
+
+            ${eta ? `<div class="eta-badge">${eta}</div>` : ''}
+
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${percent}%"></div></div>
+
+            <div class="book-actions">
+              ${book.hasFile ? `<button class="action-btn read-btn" onclick="openReader('${book.id}',event)">KİTABI OKU</button>` : ''}
+              ${book.currentPage < book.totalPages
+                ? `<button class="action-btn" onclick="finishBook('${book.id}',event)">BİTİR</button>`
+                : `<span class="action-btn" style="border-color:var(--card-border-color);color:var(--card-border-color)">BİTTİ</span>`}
+              ${book.isSpecial ? `<span style="margin-left:auto;display:inline-flex;align-items:center" title="Özel işaretli">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="var(--neon-yellow)" style="filter:drop-shadow(0 0 5px var(--neon-yellow-glow))">
+                  <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/>
+                </svg></span>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    /* ==================== BOOT ==================== */
+    render();
+    renderWishlist();
+  </script>
 </body>
 </html>

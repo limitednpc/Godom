@@ -122,3 +122,34 @@ tüketim arşivi, yedek al/yükle, panel katlama.
   ilerlemesi, disiplin, sayaçlar, denemeler, tekrar kayıtları, Mert takibi,
   kalibrasyon, ayarlar) olduğu gibi devralınır.
 - Yeni anahtar: `kronos:db:v10`.
+
+---
+
+## Spectrum ekranı (Stańczyk Spectrum)
+
+`stanczykspectrum.html`'in tamamı — CSS'i, işaretlemesi, 74 fonksiyonluk betiği ve
+CDN kütüphaneleri (JSZip, epub.js, html2pdf, html2canvas, marked) — KRONOS'a
+**Spectrum** adıyla ayrı bir ekran olarak eklendi. SİSTEM > Ekranlar listesinden açılır.
+
+İçindekilerin hepsi çalışır durumda: zincir (streak) sayacı, 6 aylık okuma ısı
+haritası, kitap kartları (kapak, etiket, kategori, ilerleme çubuğu, tahmini bitiş,
+özel işaret, not rozeti), arama + durum/kategori/etiket süzgeçleri + sıralama,
+kitap ekleme, oturum kaydı, istediklerim listesi (öncelik, gerekçe, markdown not,
+önizleme), günlük kayıtlar, yazar dağılımı, okuma analizi (PDF raporu), kart
+oluşturma, yedekleme (dışa/içe aktarma), EPUB/PDF okuyucu ve markdown not dışa
+aktarma.
+
+**Nasıl birleştirildi**
+- CSS'in tamamı `#view-spectrum` altına hapsedildi (`:root`, `*`, `body`, `header`
+  gibi genel seçiciler dahil), böylece KRONOS'un fosfor teması etkilenmiyor ve
+  Spectrum kendi Orbitron/Inter tipografisiyle kendi renk değişkenlerini kullanıyor.
+- İşaretleme bire bir korundu; 126 ID'nin hiçbiri KRONOS'unkilerle çakışmıyor.
+- Betik ayrı bir `<script>` bloğunda, KRONOS'un IIFE'sinden bağımsız global
+  kapsamda duruyor — `onclick` bağlarının çalışması için gerekli, çakışma yok.
+- Veri ayrı: `cyberread_books` / `cyberread_logs` / `cyberread_wishlist` ve
+  kitap dosyaları için `CyberReadFilesDB_v5` (IndexedDB).
+- KRONOS'un görünüm giriş animasyonu, `position:fixed` modallara kapsayıcı blok
+  yarattığı için bu ekranda kapatıldı; modaller ekranı tam kaplıyor.
+- CDN kütüphaneleri çevrimdışıyken yüklenmezse uygulama çalışmaya devam eder;
+  yalnızca EPUB/PDF okuma, PDF dışa aktarma ve markdown önizleme devre dışı kalır
+  (kaynak dosyadaki davranışın aynısı).
