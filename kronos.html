@@ -71,11 +71,18 @@
   .disp{font-family:var(--display);font-weight:600;letter-spacing:-.01em;}
 
   /* ---- CRT DOKU ---- */
-  .scan{position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.42;mix-blend-mode:multiply;
-    background:repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px);}
-  .vig{position:fixed;inset:0;pointer-events:none;z-index:9997;
+  /* mix-blend-mode tüm sayfayı tek katmana indirip her boyamada yeniden
+     harmanlıyordu; koyu zeminde görsel fark yok, maliyet büyük — kaldırıldı. */
+  .scan{position:fixed;inset:0;pointer-events:none;z-index:9998;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.14) 0 1px, transparent 1px 3px);
+    contain:strict;}
+  .vig{position:fixed;inset:0;pointer-events:none;z-index:9997;contain:strict;
     background:radial-gradient(130% 100% at 50% 40%, transparent 58%, rgba(0,0,0,.66) 100%);}
-  .flick{position:fixed;inset:0;pointer-events:none;z-index:9996;background:rgba(var(--acc-rgb),1);opacity:0;mix-blend-mode:overlay;animation:flick 9s infinite steps(60);}
+  /* Titreşim katmanı bütün ekranı sürekli yeniden boyattığı için varsayılan
+     olarak kapalı; SİSTEM > Görüntü'den açılır. */
+  .flick{display:none;position:fixed;inset:0;pointer-events:none;z-index:9996;background:rgba(var(--acc-rgb),1);opacity:0;mix-blend-mode:overlay;contain:strict;}
+  html[data-crt="tam"] .flick{display:block;animation:flick 9s infinite steps(60);}
+  html[data-crt="sade"] .scan,html[data-crt="sade"] .vig{display:none;}
   @keyframes flick{0%,97%,100%{opacity:0}98%{opacity:.016}99%{opacity:.006}}
 
   #app{height:100vh;height:100dvh;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;position:relative;z-index:1;max-width:1560px;margin:0 auto;}
@@ -335,7 +342,7 @@
   .hstreak{font-family:var(--display);font-size:12px;font-weight:600;color:var(--amber-b);white-space:nowrap;padding-left:9px;}
 
   /* ===================== SHEET ===================== */
-  .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:10000;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px);}
+  .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:10000;display:none;align-items:flex-end;justify-content:center;}
   .sheet-bg.on{display:flex;animation:fade .2s ease;}
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .sheet{width:100%;max-width:580px;max-height:92vh;overflow:auto;border:2px solid var(--line2);border-radius:var(--r2) var(--r2) 0 0;background:var(--surf);box-shadow:0 -6px 0 #000,0 -20px 60px rgba(0,0,0,.6);padding:18px;animation:slideup .28s ease;}
@@ -401,7 +408,7 @@
   #set-tema button{flex:1;}
 
   /* ===================== MODAL ===================== */
-  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:10001;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px);}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:10001;display:none;align-items:center;justify-content:center;padding:16px;}
   .modal-bg.on{display:flex;animation:fade .2s ease;}
   .modal{width:100%;max-width:580px;max-height:88vh;overflow:auto;border:2px solid var(--line2);border-radius:var(--r2);background:var(--surf);box-shadow:var(--sh),0 20px 60px rgba(0,0,0,.6);padding:20px;}
   .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;} .modal-head span{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:.14em;color:var(--amber-b);}
@@ -681,7 +688,7 @@
   @keyframes tostIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
   /* ---- katman (tam ekran form) ---- */
-  .kat-bg{position:fixed;inset:0;z-index:10200;background:rgba(0,0,0,.86);backdrop-filter:blur(3px);
+  .kat-bg{position:fixed;inset:0;z-index:10200;background:rgba(0,0,0,.9);
     display:none;align-items:flex-end;justify-content:center;overflow-y:auto;}
   .kat-bg.on{display:flex;animation:fade .2s ease;}
   .kat{width:100%;max-width:620px;max-height:94vh;overflow-y:auto;border:2px solid var(--line2);
@@ -735,12 +742,12 @@
   .kart>select{color-scheme:dark;}
   /* header + alarm şeridi + sahne + nav = dört satır */
   #app{grid-template-rows:auto auto 1fr auto;}
-  nav{grid-template-columns:repeat(6,1fr);}
+  nav{grid-template-columns:repeat(7,1fr);}
   @media(max-width:900px){
     .kart{padding:12px;}
     .dugumler{grid-template-columns:1fr;}
-    nav button{font-size:8px;letter-spacing:.04em;}
-    nav button .ik{font-size:15px;}
+    nav button{font-size:7.5px;letter-spacing:.01em;padding:0;}
+    nav button .ik{font-size:14px;}
   }
 
   /* ===================================================================
@@ -1579,10 +1586,21 @@ to { opacity: 1; transform: none; } }
     }
   
 
+  /* --- Uzun listelerde ekran dışı öğeleri boyama --- */
+  .dugumSatir{content-visibility:auto;contain-intrinsic-size:auto 64px;}
+  .blok{content-visibility:auto;contain-intrinsic-size:auto 120px;}
+  #view-spectrum .book-card{content-visibility:auto;contain-intrinsic-size:auto 220px;}
+  #view-spectrum .heatmap-grid{contain:layout paint;}
+  .li,.gorev{contain:layout paint;}
+
   /* --- Spectrum yerleşim düzeltmeleri --- */
   /* .view.on giriş animasyonu transform canlandırdığı için sabitlenmiş
      (position:fixed) öğelere kapsayıcı blok yaratıyor; bu da Spectrum'un
      modallarını ekran yerine görünümün içine hapsediyordu. */
+  /* Spectrum'un kendi body kuralı (position:relative; min-height:100vh) id
+     seçicisi olduğu için .view'in kaydırma sözleşmesini eziyordu — geri alıyoruz. */
+  #view-spectrum{position:absolute;inset:0;min-height:0;overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
   #view-spectrum.on{animation:none;}
   /* modal açıkken arka planın kaymaması için — Spectrum'da kaydırılan
      öğe body değil, görünümün kendisi */
@@ -2423,6 +2441,7 @@ to { opacity: 1; transform: none; } }
     <button data-view="dag"><span class="ik">⌗</span>HARİTA</button>
     <button data-view="tekrar"><span class="ik">↻</span>TEKRAR</button>
     <button data-view="analiz"><span class="ik">▨</span>ANALİZ</button>
+    <button data-view="spectrum"><span class="ik">◐</span>SPECTRUM</button>
     <button data-view="sistem"><span class="ik">≣</span>SİSTEM</button>
   </nav>
 </div>
@@ -2833,7 +2852,7 @@ function defaults(){
       kalkis:"06:45", blok1:"07:30", ekranKapanis:"22:30", uyku:"23:00",
       hizKatsayisi:0.80, defterKatsayisi:1.60,
       kapasite:{ KAMP:450, HAFTAICI:225, HAFTASONU:480 },
-      bildirim:false, asamaMod:"OTO",
+      bildirim:false, asamaMod:"OTO", crt:"normal",
       video:{}, playlist:{},
       kota:{ MAT:500, GEO:500, MATA:500, FIZ:250, KIM:250, BIO:250, TUR:0, SOS:0 },
       testSoru:20, denemeGunu:6, denemeBaslangic:null,
@@ -2933,6 +2952,7 @@ function migrate(){
 
   KAZANIM=kazanimlariKur();
   KZ={}; KAZANIM.forEach(function(k2){KZ[k2.id]=k2;});
+  kilitAcmaKur();
   KAZANIM.forEach(function(k2){
     if(!DB.ilerleme[k2.id])
       DB.ilerleme[k2.id]={durum:null,dk:0,soru:0,dogru:0,yanlis:0,sonTemas:null,iadeSayisi:0};
@@ -3004,8 +3024,18 @@ function durumlariGuncelle(){
     x.durum=(x.dk>0||x.soru>0)?'CALISILIYOR':'ACIK';
   });
 }
+/* oncelik() sıralama karşılaştırıcısı içinden çağrıldığı için bu sayım
+   O(n²) çalışıyordu; kazanım listesi sabit olduğundan bir kez kuruluyor. */
+var _kilitAcma=null;
+function kilitAcmaKur(){
+  _kilitAcma={};
+  KAZANIM.forEach(function(k){
+    k.onkosul.forEach(function(o){ _kilitAcma[o]=(_kilitAcma[o]||0)+1; });
+  });
+}
 function kilitAcmaSayisi(id){
-  return KAZANIM.filter(function(k){return k.onkosul.indexOf(id)>=0;}).length;
+  if(!_kilitAcma) kilitAcmaKur();
+  return _kilitAcma[id]||0;
 }
 function eksikOnkosul(id,yol){
   yol=yol||[];
@@ -3323,12 +3353,22 @@ function enIyi(liste,faz,harici){
   var aday=liste.filter(function(k){return dis.indexOf(k.id)<0&&DB.ilerleme[k.id].durum!=='PEKISMIS';});
   var manuelli=aday.filter(function(k){return manuelSiraVar(k.ders)&&siraIndex(k)<9999;});
   if(manuelli.length){ manuelli.sort(function(a,b){return siraIndex(a)-siraIndex(b);}); return manuelli[0]; }
-  var acik=aday.filter(function(k){return k.onkosul.every(pekismisMi);})
-    .sort(function(a,b){return oncelik(b,faz)-oncelik(a,faz);});
-  if(acik.length) return acik[0];
-  return aday.sort(function(a,b){
-    return (eksikOnkosul(a.id).length-eksikOnkosul(b.id).length)||(oncelik(b,faz)-oncelik(a,faz));
-  })[0]||null;
+  var acik=aday.filter(function(k){return k.onkosul.every(pekismisMi);});
+  if(acik.length){
+    var enIyisi=acik[0], enIyiP=oncelik(enIyisi,faz);
+    for(var i=1;i<acik.length;i++){
+      var pp=oncelik(acik[i],faz);
+      if(pp>enIyiP){ enIyiP=pp; enIyisi=acik[i]; }
+    }
+    return enIyisi;
+  }
+  /* Karşılaştırıcı içinde özyinelemeli hesap yapmak yerine anahtarlar bir kez
+     çıkarılıp sıralanıyor (Schwartz dönüşümü). */
+  var anahtar=aday.map(function(k){
+    return {k:k, eksik:eksikOnkosul(k.id).length, oncelik:oncelik(k,faz)};
+  });
+  anahtar.sort(function(a,b){ return (a.eksik-b.eksik)||(b.oncelik-a.oncelik); });
+  return anahtar.length?anahtar[0].k:null;
 }
 /* ders bazlı video kaynağı önerisi */
 function kaynakAd(k){
@@ -7515,6 +7555,14 @@ function renderSistem(){
   k5.appendChild(kb);
   v.appendChild(k5);
 
+  var kg2=elx('div','kart');
+  kg2.appendChild(elx('h2',null,'GÖRÜNTÜ VE PERFORMANS'));
+  kg2.appendChild(elx('div','mini','CRT katmanları ekranın tamamını kaplar; zayıf cihazlarda kaydırmayı yavaşlatır. Takılma yaşıyorsan SADE seç.'));
+  kg2.appendChild(ciplerSec([['sade','SADE'],['normal','NORMAL'],['tam','TAM CRT']],
+    a.crt||'normal',function(x){ a.crt=x; applyCrt(x); saveNow(); tost('Görüntü: '+x); }));
+  kg2.appendChild(elx('div','mini','SADE: tarama çizgisi ve vinyet kapalı — en akıcısı. NORMAL: tarama + vinyet. TAM CRT: titreşim de açık (en pahalısı).'));
+  v.appendChild(kg2);
+
   var kt=elx('div','kart');
   kt.appendChild(elx('h2',null,'EKRAN FAZI'));
   kt.appendChild(ciplerSec([['kizil','KIZIL'],['kehribar','KEHRİBAR'],['yesil','YEŞİL']],
@@ -7550,6 +7598,12 @@ function paintThemeControls(){
   var cur=(DB&&DB.ayar&&DB.ayar.tema)||"kizil";
   var tb=el("theme-btn");
   if(tb){var sp=tb.querySelector("span");if(sp)sp.textContent=themeLabel(cur);}
+}
+/* CRT katmanları (tarama çizgisi, vinyet, titreşim) tüm ekranı kaplayan
+   sabit katmanlar; zayıf cihazlarda kaydırmayı yavaşlatıyorlar.
+   sade = hiçbiri · normal = tarama + vinyet · tam = titreşim de açık */
+function applyCrt(k){
+  document.documentElement.setAttribute("data-crt",k||"normal");
 }
 function applyTheme(k){
   if(!k)k="kizil";
@@ -7860,14 +7914,13 @@ function runBoot(){
 /* ======================================================================
    32. SENKRON + GÖRÜNÜM
    ====================================================================== */
+/* Eskiden her etkileşimde pano + takvim + gündem + kanban birlikte yeniden
+   çiziliyordu; ekranda olmayan şeyi çizmek telefonda saniyeler yiyordu.
+   Artık yalnızca üst bar ve açık olan ekran çizilir. */
 function syncAll(){
   safe(renderTracker);
-  safe(renderDurum);
-  safe(renderProgram);
-  safe(renderCountdowns);
-  safe(renderCalendar);
-  safe(renderAgenda);
-  safe(renderBoard);
+  if(activeView==="pano"){ safe(renderDurum); safe(renderProgram); safe(renderBoard); }
+  if(activeView==="takvim"){ safe(renderCountdowns); safe(renderCalendar); safe(renderAgenda); }
   if(activeView==="analiz")safe(renderAnaliz);
   if(activeView==="notlar")safe(renderNotes);
   if(activeView==="cozum")safe(renderCozum);
@@ -7883,7 +7936,7 @@ function syncAll(){
   save();
 }
 function fullRender(){
-  safe(function(){applyTheme(DB.ayar.tema);});
+  safe(function(){applyTheme(DB.ayar.tema);applyCrt(DB.ayar.crt);});
   safe(renderTracker);
   safe(renderDurum);
   safe(renderProgram);
@@ -7923,6 +7976,7 @@ function switchView(v){
     b.setAttribute("aria-current",b.getAttribute("data-view")===v?"true":"false");
   });
   if(v==="notlar")safe(renderNotes);
+  if(v==="takvim"){safe(renderCountdowns);safe(renderCalendar);safe(renderAgenda);}
   if(v==="aliskanlik")safe(renderHabits);
   if(v==="deneme"){safe(renderDeneme);safe(renderDenemeYanlis);safe(recalcDeneme);}
   if(v==="dag")safe(renderDag);
@@ -8532,7 +8586,13 @@ Promise.all([getRaw(DB_KEY),getRaw("kronos:db:v3"),getRaw("kronos:tasks:v1"),
     function setCategoryFilter(v) { activeCategoryFilter = v; render(); }
     function setTagFilter(v) { activeTagFilter = v; render(); }
     function setSort(v) { activeSort = v; render(); }
-    function handleSearch(v) { searchQuery = v.trim().toLowerCase(); render(); }
+    /* Her tuş vuruşunda tüm kitap listesi yeniden kuruluyordu; yazma bitince çiz. */
+    let searchTimer = null;
+    function handleSearch(v) {
+      searchQuery = v.trim().toLowerCase();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(render, 130);
+    }
 
     function filterByAuthorIdx(i) {
       const name = authorIndex[i];

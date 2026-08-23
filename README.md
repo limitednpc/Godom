@@ -153,3 +153,28 @@ aktarma.
 - CDN kütüphaneleri çevrimdışıyken yüklenmezse uygulama çalışmaya devam eder;
   yalnızca EPUB/PDF okuma, PDF dışa aktarma ve markdown önizleme devre dışı kalır
   (kaynak dosyadaki davranışın aynısı).
+
+### Nav ve performans
+
+- Spectrum alt nav çubuğuna eklendi (artık 7 sekme: PANO · TAKVİM · HARİTA ·
+  TEKRAR · ANALİZ · SPECTRUM · SİSTEM).
+- **Kaydırma düzeltmesi**: Spectrum'un kendi `body{position:relative;min-height:100vh}`
+  kuralı id seçicisi olduğu için `.view`'in `position:absolute; overflow-y:auto`
+  sözleşmesini eziyordu — ekran hiç kaydırılamıyordu. Kaydırma kabı geri verildi.
+- **Ekranda olmayanı çizme**: `syncAll()` her etkileşimde pano + takvim + gündem +
+  kanban'ı birlikte yeniden kuruyordu. Artık yalnızca üst bar ve açık ekran çizilir
+  (görev tikleme ~0,8 ms).
+- **CRT katmanları ucuzladı**: tarama çizgisindeki `mix-blend-mode:multiply` tüm
+  sayfayı tek katmana indirip her boyamada yeniden harmanlıyordu — koyu zeminde
+  görsel fark olmadan kaldırıldı. Bütün ekranı sürekli yeniden boyatan titreşim
+  katmanı varsayılan olarak kapatıldı. SİSTEM > **Görüntü ve Performans**'tan
+  SADE / NORMAL / TAM CRT seçilebilir.
+- **Modal arka planlarındaki `backdrop-filter: blur`** kaldırıldı (mobilde pahalı,
+  %86 siyah perdenin üstünde görünmüyordu).
+- **Uzun listeler**: kazanım düğümleri, bloklar ve kitap kartları
+  `content-visibility:auto` ile ekran dışındayken boyanmıyor.
+- **Kazanım önceliği**: `kilitAcmaSayisi` sıralama karşılaştırıcısı içinden
+  çağrıldığı için O(n²) çalışıyordu; tek seferlik dizinle değiştirildi. `enIyi`
+  sıralaması da özyinelemeli hesabı karşılaştırıcıdan çıkardı.
+- **Spectrum araması**: her tuş vuruşunda tüm liste yeniden kuruluyordu; 130 ms
+  geciktirildi (7 tuş → 7 çizim yerine 1).
